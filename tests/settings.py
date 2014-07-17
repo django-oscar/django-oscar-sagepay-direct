@@ -4,7 +4,12 @@ HAYSTACK_CONNECTIONS = {
         'ENGINE': 'haystack.backends.simple_backend.SimpleEngine',
     },
 }
-
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }
+}
 INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -20,4 +25,6 @@ INSTALLED_APPS = [
 from oscar import get_core_apps
 INSTALLED_APPS = INSTALLED_APPS + get_core_apps()
 
-from oscar.defaults import *
+from oscar.defaults import *  # noqa
+
+OSCAR_SAGEPAY_VENDOR = 'oscar.sagepay'
