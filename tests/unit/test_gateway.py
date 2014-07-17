@@ -1,14 +1,18 @@
 from decimal import Decimal as D
+import datetime
 
 import pytest
 import mock
+from oscar.apps.payment import models as payment_models
 
 from oscar_sagepay import gateway, models
 from tests import responses
 
+# Fixtures
+BANKCARD = payment_models.Bankcard(
+    name='Barry Chuckle', number='4111111111111111',
+    expiry_date=datetime.date.today(), ccv='123')
 AMT, CURRENCY = D('10.00'), 'GBP'
-
-pytestmark = pytest.mark.django_db
 
 
 def stub_response(content=responses.MALFORMED, status_code=200):
@@ -32,8 +36,7 @@ def mock_orm():
 @mock_orm()
 @stub_response()
 def test_register_payment_returns_response_obj():
-    return
-    response = gateway.register_payment(AMT, CURRENCY)
+    response = gateway.register_payment(BANKCARD, AMT, CURRENCY)
     assert isinstance(response, gateway.Response)
 
 
@@ -41,5 +44,19 @@ def test_register_payment_returns_response_obj():
 @stub_response(status_code=500)
 def test_exception_raised_for_non_200_response():
     with pytest.raises(Exception) as e:
-        gateway.register_payment(AMT, CURRENCY)
+        gateway.register_payment(BANKCARD, AMT, CURRENCY)
     assert '500' in e.exconly()
+
+
+@mock_orm()
+@mock.patch('requests.post', **{'return_value.content': responses.MALFORMED,
+                                'return_value.status_code': 200})
+def test_params_are_passed_correctly(mocked_post):
+    gateway.register_payment(BANKCARD, AMT, CURRENCY)
+    passed_params = mocked_post.call_args[0][1]
+    assert passed_params['ExpiryDate'] == BANKCARD.expiry_date.strftime('%m%y')
+    assert passed_params['Amount'] == '10.00'
+    assert passed_params['Currency'] == 'GBP'
+    assert passed_params['CardHolder'] == BANKCARD.name
+    assert passed_params['CV2'] == BANKCARD.ccv
+    assert passed_params['CardType'] == 'VISA'  # Magic number looks like a VISA

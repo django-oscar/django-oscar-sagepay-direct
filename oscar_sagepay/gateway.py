@@ -1,30 +1,14 @@
 import httplib
 
 import requests
-from django.conf import settings
+from oscar.apps.payment import bankcards
 
-from . import models, exceptions
-
-TEST_URL = 'https://test.sagepay.com/gateway/service/vspdirect-register.vsp'
+from . import models, exceptions, config
 
 # TxType
 TXTYPE_PAYMENT = 'PAYMENT'
 TXTYPE_DEFERRED = 'DEFERRED'
 TXTYPE_AUTHENTICATE = 'AUTHENTICATE'
-
-# Card types
-CARDTYPE_VISA = 'VISA'
-CARDTYPE_MASTERCARD = 'MC'
-CARDTYPE_MASTERCARD_DEBIT = 'MCDEBIT'
-CARDTYPE_DELTA = 'DELTA'
-CARDTYPE_MAESTRO = 'MAESTRO'
-CARDTYPE_UKE = 'UKE'
-CARDTYPE_DC = 'DC'
-CARDTYPE_JCB = 'JCB'
-CARDTYPE_LASER = 'LASER'
-CARDTYPE_PAYPAL = 'PAYPAL'
-
-VENDOR = 'tangentsnowball'
 
 
 __all__ = ['register_payment', 'authenticate', 'authorize', 'cancel', 'refund']
@@ -66,37 +50,61 @@ class Response(object):
         return self.status in (self.OK, self.OK_REPEATED)
 
 
-def register_payment(amount, currency):
+def _card_type(bankcard):
+    """
+    Convert card-number into appropriate card type that Sagepay will
+    recognise.
+    """
+    # Oscar provides a function to do the card-type recognition but we need to
+    # map into the values that Sagepay accepts.
+    oscar_type = bankcards.bankcard_type(bankcard.number)
+    mapping = {
+        bankcards.VISA: 'VISA',
+        bankcards.VISA_ELECTRON: 'UKE',
+        bankcards.MASTERCARD: 'MC',
+        bankcards.MAESTRO: 'MAESTRO',
+        bankcards.AMEX: 'AMEX',
+        bankcards.DINERS_CLUB: 'DC',
+        bankcards.LASER: 'LASER',
+        bankcards.JCB: 'JCB',
+    }
+    return mapping.get(oscar_type, '')
+
+
+def register_payment(bankcard, amount, currency, description=''):
     # Create model first to get unique ID for VendorExCode
     rr = models.RequestResponse.objects.create()
 
     params = {
-        'VPSProtocol': '3.0',
+        # VENDOR DETAILS
+        'VPSProtocol': config.VPS_PROTOCOL,
         'TxType': TXTYPE_PAYMENT,
-        'Vendor': settings.OSCAR_SAGEPAY_VENDOR,
+        'Vendor': config.VENDOR,
         # This should be unique per txn
-        'VendorTxCode': '1',
+        'VendorTxCode': rr.vendor_tx_code,
+        # TXN DETAILS
         'Amount': str(amount),
         'Currency': currency,
-        'Description': 'This is a test',
-        'CardType': CARDTYPE_VISA,
-        'CardNumber': '4929000000006',
-        'CardHolder': 'Barry',
-        # Format MMYY
-        'ExpiryDate': '0114',
+        'Description': description,
+        # BANKCARD DETAILS
+        'CardType': _card_type(bankcard),
+        'CardNumber': bankcard.number,
+        'CV2': bankcard.ccv,
+        'CardHolder': bankcard.name,
+        'ExpiryDate': bankcard.expiry_month('%m%y'),
     }
 
     # Update audit model with request info
     rr.record_request(params)
     rr.save()
 
-    # Sagepay seem to return a status 200 even for errors
     try:
-        http_response = requests.post(TEST_URL, params)
+        http_response = requests.post(config.VPS_URL, params)
     except requests.exceptions.RequestException as e:
         raise exceptions.GatewayError(
             "HTTP error: %s" % e.message)
     if http_response.status_code != httplib.OK:
+        # Sagepay seem to return a status 200 even for bad requests
         raise exceptions.GatewayError(
             "Sagepay server returned a %s response with content %s" % (
                 http_response.status_code, http_response.content))
