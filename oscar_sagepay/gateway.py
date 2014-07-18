@@ -71,7 +71,8 @@ def _card_type(bankcard):
     return mapping.get(oscar_type, '')
 
 
-def _register_payment(tx_type, bankcard, amount, currency, description=''):
+def _register_payment(tx_type, bankcard, amount, currency, description='',
+                      **kwargs):
     # Create model first to get unique ID for VendorExCode
     rr = models.RequestResponse.objects.create()
 
@@ -92,6 +93,16 @@ def _register_payment(tx_type, bankcard, amount, currency, description=''):
         'CV2': bankcard.ccv,
         'CardHolder': bankcard.name,
         'ExpiryDate': bankcard.expiry_month('%m%y'),
+        # BILLING DETAILS
+        'BillingSurname': kwargs.get('billing_surname', ''),
+        'BillkngFirstnames': kwargs.get('billing_first_names', ''),
+        'BillingAddress1': kwargs.get('billing_address1', ''),
+        'BillingAddress2': kwargs.get('billing_address2', ''),
+        'BillingCity': kwargs.get('billing_city', ''),
+        'BillingPostCode': kwargs.get('billing_postcode', ''),
+        'BillingCountry': kwargs.get('billing_country', ''),
+        'BillingState': kwargs.get('billing_state', ''),
+        'BillingPhone': kwargs.get('billing_phone', ''),
     }
 
     # Update audit model with request info
