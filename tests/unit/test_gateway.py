@@ -35,8 +35,8 @@ def mock_orm():
 
 @mock_orm()
 @stub_response()
-def test_register_payment_returns_response_obj():
-    response = gateway.register_payment(BANKCARD, AMT, CURRENCY)
+def test_payment_returns_response_obj():
+    response = gateway.payment(BANKCARD, AMT, CURRENCY)
     assert isinstance(response, gateway.Response)
 
 
@@ -44,7 +44,7 @@ def test_register_payment_returns_response_obj():
 @stub_response(status_code=500)
 def test_exception_raised_for_non_200_response():
     with pytest.raises(Exception) as e:
-        gateway.register_payment(BANKCARD, AMT, CURRENCY)
+        gateway.payment(BANKCARD, AMT, CURRENCY)
     assert '500' in e.exconly()
 
 
@@ -52,7 +52,7 @@ def test_exception_raised_for_non_200_response():
 @mock.patch('requests.post', **{'return_value.content': responses.MALFORMED,
                                 'return_value.status_code': 200})
 def test_params_are_passed_correctly(mocked_post):
-    gateway.register_payment(BANKCARD, AMT, CURRENCY)
+    gateway.payment(BANKCARD, AMT, CURRENCY)
     passed_params = mocked_post.call_args[0][1]
     assert passed_params['ExpiryDate'] == BANKCARD.expiry_date.strftime('%m%y')
     assert passed_params['Amount'] == '10.00'

@@ -11,7 +11,7 @@ TXTYPE_DEFERRED = 'DEFERRED'
 TXTYPE_AUTHENTICATE = 'AUTHENTICATE'
 
 
-__all__ = ['register_payment', 'authenticate', 'authorize', 'cancel', 'refund']
+__all__ = ['payment', 'authenticate', 'authorize', 'cancel', 'refund']
 
 
 class Response(object):
@@ -71,15 +71,15 @@ def _card_type(bankcard):
     return mapping.get(oscar_type, '')
 
 
-def register_payment(bankcard, amount, currency, description=''):
+def _register_payment(tx_type, bankcard, amount, currency, description=''):
     # Create model first to get unique ID for VendorExCode
     rr = models.RequestResponse.objects.create()
 
     params = {
         # VENDOR DETAILS
         'VPSProtocol': config.VPS_PROTOCOL,
-        'TxType': TXTYPE_PAYMENT,
         'Vendor': config.VENDOR,
+        'TxType': tx_type,
         # This should be unique per txn
         'VendorTxCode': rr.vendor_tx_code,
         # TXN DETAILS
@@ -115,6 +115,13 @@ def register_payment(bankcard, amount, currency, description=''):
     rr.save()
 
     return sp_response
+
+
+def payment(*args, **kwargs):
+    """
+    Authorize a transaction (1 stage payment processing)
+    """
+    return _register_payment(TXTYPE_PAYMENT, *args, **kwargs)
 
 
 def authenticate(amount, currency):
