@@ -15,6 +15,9 @@ class RequestResponse(models.Model):
 
     # Response fields
     status = models.CharField(max_length=128, blank=True)
+    status_detail = models.TextField(blank=True)
+    tx_id = models.CharField(max_length=128, blank=True)
+    security_key = models.CharField(max_length=128, blank=True)
 
     date_created = models.DateTimeField(auto_now_add=True)
 
@@ -49,3 +52,6 @@ class RequestResponse(models.Model):
         Update fields based on Response instance
         """
         self.status = response.status
+        self.status_detail = response.status_detail
+        self.tx_id = response.tx_id
+        self.security_key = response.security_key

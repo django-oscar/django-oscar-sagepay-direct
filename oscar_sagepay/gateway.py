@@ -39,11 +39,19 @@ class Response(object):
 
     @property
     def status(self):
-        return self.param('Status')
+        return self.param('Status', '')
 
     @property
     def status_detail(self):
-        return self.param('StatusDetail')
+        return self.param('StatusDetail', '')
+
+    @property
+    def tx_id(self):
+        return self.param('VPSTxId', '')
+
+    @property
+    def security_key(self):
+        return self.param('SecurityKey', '')
 
     @property
     def is_successful(self):
