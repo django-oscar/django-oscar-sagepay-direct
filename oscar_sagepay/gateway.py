@@ -103,7 +103,7 @@ def _register_payment(tx_type, bankcard, amount, currency, description='',
         'ExpiryDate': bankcard.expiry_month('%m%y'),
         # BILLING DETAILS
         'BillingSurname': kwargs.get('billing_surname', ''),
-        'BillkngFirstnames': kwargs.get('billing_first_names', ''),
+        'BillingFirstnames': kwargs.get('billing_first_names', ''),
         'BillingAddress1': kwargs.get('billing_address1', ''),
         'BillingAddress2': kwargs.get('billing_address2', ''),
         'BillingCity': kwargs.get('billing_city', ''),
@@ -111,6 +111,16 @@ def _register_payment(tx_type, bankcard, amount, currency, description='',
         'BillingCountry': kwargs.get('billing_country', ''),
         'BillingState': kwargs.get('billing_state', ''),
         'BillingPhone': kwargs.get('billing_phone', ''),
+        # DELIVERY DETAILS
+        'DeliverySurname': kwargs.get('delivery_surname', ''),
+        'DeliveryFirstnames': kwargs.get('delivery_first_names', ''),
+        'DeliveryAddress1': kwargs.get('delivery_address1', ''),
+        'DeliveryAddress2': kwargs.get('delivery_address2', ''),
+        'DeliveryCity': kwargs.get('delivery_city', ''),
+        'DeliveryPostCode': kwargs.get('delivery_postcode', ''),
+        'DeliveryCountry': kwargs.get('delivery_country', ''),
+        'DeliveryState': kwargs.get('delivery_state', ''),
+        'DeliveryPhone': kwargs.get('delivery_phone', ''),
     }
 
     # Update audit model with request info
