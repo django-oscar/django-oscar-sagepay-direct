@@ -27,4 +27,5 @@ INSTALLED_APPS = INSTALLED_APPS + get_core_apps()
 
 from oscar.defaults import *  # noqa
 
-OSCAR_SAGEPAY_VENDOR = 'oscar.sagepay'
+OSCAR_SAGEPAY_VENDOR = 'tangentlabs'
+OSCAR_SAGEPAY_VPS_PROTOCOL = '2.23'

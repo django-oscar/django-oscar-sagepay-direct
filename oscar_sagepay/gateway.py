@@ -1,4 +1,5 @@
 import httplib
+import collections
 
 import requests
 from oscar.apps.payment import bankcards
@@ -9,20 +10,32 @@ from . import models, exceptions, config
 TXTYPE_PAYMENT = 'PAYMENT'
 TXTYPE_DEFERRED = 'DEFERRED'
 TXTYPE_AUTHENTICATE = 'AUTHENTICATE'
+TXTYPE_AUTHORISE = 'AUTHORISE'
+TXTYPE_REFUND = 'REFUND'
 
 
-__all__ = ['payment', 'authenticate', 'authorize', 'cancel', 'refund']
+__all__ = ['PreviousTxn', 'payment', 'authenticate',
+           'authorise', 'cancel', 'refund']
 
 
 class Response(object):
+    """
+    Response object wrapping providing easy access to the returned parameters
+    """
     # Statuses
     OK = 'OK'
     OK_REPEATED = 'OK REPEATED'
     MALFORMED = 'MALFORMED'
     INVALID = 'INVALID'
     ERROR = 'ERROR'
+    REGISTERED = 'REGISTERED'
 
-    def __init__(self, response_content):
+    def __init__(self, vendor_tx_code, response_content):
+        # We pass in the vendor tx code as it's required in several places as a
+        # parameter to subsequent payment calls but is missing from the
+        # response params.
+        self.vendor_tx_code = vendor_tx_code
+        self.raw = response_content
         self._params = dict(
             line.split('=', 1) for line in
             response_content.strip().split("\r\n"))
@@ -37,6 +50,8 @@ class Response(object):
         """
         return self._params.get(key, default)
 
+    # Syntactic sugar
+
     @property
     def status(self):
         return self.param('Status', '')
@@ -50,12 +65,27 @@ class Response(object):
         return self.param('VPSTxId', '')
 
     @property
+    def tx_auth_num(self):
+        return self.param('TxAuthNo', '')
+
+    @property
     def security_key(self):
         return self.param('SecurityKey', '')
+
+    # Predicates
 
     @property
     def is_successful(self):
         return self.status in (self.OK, self.OK_REPEATED)
+
+    @property
+    def is_registered(self):
+        return self.status == self.REGISTERED
+
+
+# Datastructure for wrapping up details of a previous transaction
+PreviousTxn = collections.namedtuple(
+    'PreviousTxn', ('vendor_tx_code', 'tx_id', 'tx_auth_num', 'security_key'))
 
 
 def _card_type(bankcard):
@@ -79,22 +109,61 @@ def _card_type(bankcard):
     return mapping.get(oscar_type, '')
 
 
-def _register_payment(tx_type, bankcard, amount, currency, description='',
-                      **kwargs):
-    # Create model first to get unique ID for VendorExCode
+def _request(url, tx_type, params):
+    # Create audit model
     rr = models.RequestResponse.objects.create()
 
-    params = {
-        # VENDOR DETAILS
+    vendor_tx_code = rr.vendor_tx_code
+    request_params = {
         'VPSProtocol': config.VPS_PROTOCOL,
         'Vendor': config.VENDOR,
         'TxType': tx_type,
-        # This should be unique per txn
-        'VendorTxCode': rr.vendor_tx_code,
+        'VendorTxCode': vendor_tx_code,
+    }
+    request_params.update(params)
+
+    # Update audit model with request info
+    rr.record_request(request_params)
+    rr.save()
+
+    try:
+        http_response = requests.post(url, request_params)
+    except requests.exceptions.RequestException as e:
+        raise exceptions.GatewayError(
+            "HTTP error: %s" % e.message)
+    if http_response.status_code != httplib.OK:
+        # Sagepay seem to return a status 200 even for bad requests
+        raise exceptions.GatewayError(
+            "Sagepay server returned a %s response with content %s" % (
+                http_response.status_code, http_response.content))
+    sp_response = Response(vendor_tx_code, http_response.content)
+
+    # Update audit model with response info
+    rr.record_response(sp_response)
+    rr.save()
+
+    return sp_response
+
+
+def payment(*args, **kwargs):
+    """
+    Authorise a transaction (1 stage payment processing)
+    """
+    params = {}
+    return _request(config.VPS_REGISTER_URL, TXTYPE_AUTHENTICATE, params)
+
+
+def authenticate(bankcard, amount, currency, *args, **kwargs):
+    """
+    First part of 2-stage payment processing.
+
+    Successful requests will get a status of REGISTERED
+    """
+    params = {
         # TXN DETAILS
         'Amount': str(amount),
         'Currency': currency,
-        'Description': description,
+        'Description': kwargs.get('description', ''),
         # BANKCARD DETAILS
         'CardType': _card_type(bankcard),
         'CardNumber': bankcard.number,
@@ -121,47 +190,17 @@ def _register_payment(tx_type, bankcard, amount, currency, description='',
         'DeliveryCountry': kwargs.get('delivery_country', ''),
         'DeliveryState': kwargs.get('delivery_state', ''),
         'DeliveryPhone': kwargs.get('delivery_phone', ''),
+        # TOKENS
+        'CreateToken': kwargs.get('create_token', 0),
+        'StoreToken': kwargs.get('create_token', 0),
+        # Misc
+        'CustomerEMail': kwargs.get('customer_email', ''),
+        'Basket': kwargs.get('basket_html', ''),
     }
-
-    # Update audit model with request info
-    rr.record_request(params)
-    rr.save()
-
-    try:
-        http_response = requests.post(config.VPS_URL, params)
-    except requests.exceptions.RequestException as e:
-        raise exceptions.GatewayError(
-            "HTTP error: %s" % e.message)
-    if http_response.status_code != httplib.OK:
-        # Sagepay seem to return a status 200 even for bad requests
-        raise exceptions.GatewayError(
-            "Sagepay server returned a %s response with content %s" % (
-                http_response.status_code, http_response.content))
-    sp_response = Response(http_response.content)
-
-    # Update audit model with response info
-    rr.record_response(sp_response)
-    rr.save()
-
-    return sp_response
+    return _request(config.VPS_REGISTER_URL, TXTYPE_AUTHENTICATE, params)
 
 
-def payment(*args, **kwargs):
-    """
-    Authorize a transaction (1 stage payment processing)
-    """
-    return _register_payment(TXTYPE_PAYMENT, *args, **kwargs)
-
-
-def authenticate(amount, currency):
-    """
-    First part of 2-stage payment processing.
-
-    Successful requests will get a status of REGISTERED
-    """
-
-
-def authorize():
+def authorise(previous_txn, amount, description, **kwargs):
     """
     Second step of 2-stage payment processing
 
@@ -170,6 +209,16 @@ def authorize():
         amount.
         - You have to AUTHORIZE within 90 days
     """
+    params = {
+        'Amount': str(amount),
+        'Description': description,
+        'RelatedVPSTxId': previous_txn.tx_id,
+        'RelatedVendorTxCode': previous_txn.vendor_tx_code,
+        'RelatedTxAuthNo': previous_txn.tx_auth_num,
+        'RelatedSecurityKey': previous_txn.security_key,
+        'ApplyAVSCV2': kwargs.get('avs_cv2', '0'),
+    }
+    return _request(config.VPS_AUTHORISE_URL, TXTYPE_AUTHORISE, params)
 
 
 def cancel():
@@ -180,7 +229,7 @@ def cancel():
     """
 
 
-def refund():
+def refund(previous_txn, amount, currency, description, **kwargs):
     """
     Refund a txn
 
@@ -188,3 +237,13 @@ def refund():
         - You can send multiple refunds as long as the totals don't exceed the
         original amount.
     """
+    params = {
+        'Amount': str(amount),
+        'Currency': currency,
+        'Description': description,
+        'RelatedVPSTxId': previous_txn.tx_id,
+        'RelatedVendorTxCode': previous_txn.vendor_tx_code,
+        'RelatedTxAuthNo': previous_txn.tx_auth_num,
+        'RelatedSecurityKey': previous_txn.security_key,
+    }
+    return _request(config.VPS_REFUND_URL, TXTYPE_REFUND, params)

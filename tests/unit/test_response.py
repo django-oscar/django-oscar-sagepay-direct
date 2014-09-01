@@ -6,12 +6,12 @@ from tests import responses
 
 @pytest.fixture
 def response():
-    return gateway.Response(responses.MALFORMED)
+    return gateway.Response('test_1', responses.MALFORMED)
 
 
 @pytest.fixture
 def malformed_response():
-    return gateway.Response(responses.MALFORMED)
+    return gateway.Response('test_1', responses.MALFORMED)
 
 
 def test_response_allows_params_to_be_extracted(response):

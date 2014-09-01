@@ -20,3 +20,6 @@ Run tests with:
 .. code-block:: bash
 
    (sagepay) $ py.test 
+
+To run end-to-end tests, request a Sagepay Simulator account and configure it to
+not response randomly to DIRECT requests.
