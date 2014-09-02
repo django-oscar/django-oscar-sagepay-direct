@@ -1,6 +1,5 @@
 from decimal import Decimal as D
 import datetime
-import random
 
 import pytest
 from oscar.apps.payment import models as payment_models
