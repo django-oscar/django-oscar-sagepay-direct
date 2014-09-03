@@ -1,9 +1,6 @@
 import json
-import random
 
 from django.db import models
-
-from . import config
 
 
 class RequestResponse(models.Model):
@@ -11,9 +8,17 @@ class RequestResponse(models.Model):
     protocol = models.CharField(max_length=12, blank=True)
     tx_type = models.CharField(max_length=64, blank=True)
     vendor = models.CharField(max_length=128, blank=True)
+
+    # We allow this unique field to be null so a blank instance can be created
+    # to provide a PK that forms part of the vendor tx code.
+    vendor_tx_code = models.CharField(max_length=128, unique=True, null=True,
+                                      blank=True)
+
     amount = models.DecimalField(
         decimal_places=2, max_digits=12, blank=True, null=True)
     currency = models.CharField(max_length=3, blank=True)
+    description = models.CharField(max_length=512, blank=True)
+
     raw_request_json = models.TextField(blank=True)
 
     # Response fields
@@ -33,12 +38,6 @@ class RequestResponse(models.Model):
     def raw_request(self):
         return json.loads(self.raw_request_json)
 
-    @property
-    def vendor_tx_code(self):
-        return u'%s%s_%0.6d' % (
-            config.VENDOR_TX_CODE_PREFIX, self.id,
-            random.randint(0, 1000000))
-
     def record_request(self, params):
         """
         Update fields based on request params
@@ -46,8 +45,10 @@ class RequestResponse(models.Model):
         self.protocol = params['VPSProtocol']
         self.tx_type = params['TxType']
         self.vendor = params['Vendor']
+        self.vendor_tx_code = params['VendorTxCode']
         self.amount = params['Amount']
         self.currency = params.get('Currency', '')
+        self.description = params.get('Description', '')
 
         # Remove cardholder data so we can keep our PCI compliance level down
         sensitive_fields = (

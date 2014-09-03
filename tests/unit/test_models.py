@@ -6,17 +6,13 @@ def test_audit_model_can_be_created_without_kwargs():
     instance.full_clean()
 
 
-def test_audit_model_can_generate_vendor_tx_code():
-    instance = models.RequestResponse(id=1)
-    assert '1' in instance.vendor_tx_code
-
-
 def test_audit_model_records_key_request_params_as_fields():
     instance = models.RequestResponse()
     params = {
         'VPSProtocol': '3.0',
         'TxType': 'PAYMENT',
         'Vendor': 'oscar',
+        'VendorTxCode': 'req_1',
         'Amount': '10.99',
         'Currency': 'GBP',
     }
@@ -34,6 +30,7 @@ def test_audit_model_records_raw_request_params():
         'VPSProtocol': '3.0',
         'TxType': 'PAYMENT',
         'Vendor': 'oscar',
+        'VendorTxCode': 'req_1',
         'Amount': '10.99',
         'Currency': 'GBP',
     }
@@ -48,6 +45,7 @@ def test_audit_model_obscures_cardholder_data():
         'VPSProtocol': '3.0',
         'TxType': 'PAYMENT',
         'Vendor': 'oscar',
+        'VendorTxCode': 'req_1',
         'Amount': '10.99',
         'Currency': 'GBP',
         'CardHolder': 'Barry Chuckle',

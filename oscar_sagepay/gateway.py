@@ -1,12 +1,13 @@
 import httplib
 import collections
+import random
 
 import requests
 from oscar.apps.payment import bankcards
 
 from . import models, exceptions, config
 
-# TxType
+# TxTypes
 TXTYPE_PAYMENT = 'PAYMENT'
 TXTYPE_DEFERRED = 'DEFERRED'
 TXTYPE_AUTHENTICATE = 'AUTHENTICATE'
@@ -109,11 +110,17 @@ def _card_type(bankcard):
     return mapping.get(oscar_type, '')
 
 
+def _vendor_tx_code(id):
+    return u'%s%s_%0.6d' % (
+        config.VENDOR_TX_CODE_PREFIX, id,
+        random.randint(0, 1000000))
+
+
 def _request(url, tx_type, params):
     # Create audit model
     rr = models.RequestResponse.objects.create()
 
-    vendor_tx_code = rr.vendor_tx_code
+    vendor_tx_code = _vendor_tx_code(rr.id)
     request_params = {
         'VPSProtocol': config.VPS_PROTOCOL,
         'Vendor': config.VENDOR,
