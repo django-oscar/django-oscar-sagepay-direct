@@ -36,7 +36,7 @@ def mock_orm():
 @mock_orm()
 @stub_response()
 def test_authenticate_returns_response_obj():
-    response = gateway.authenticate(BANKCARD, AMT, CURRENCY)
+    response = gateway.authenticate(AMT, CURRENCY)
     assert isinstance(response, gateway.Response)
 
 
@@ -44,19 +44,5 @@ def test_authenticate_returns_response_obj():
 @stub_response(status_code=500)
 def test_exception_raised_for_non_200_response():
     with pytest.raises(Exception) as e:
-        gateway.authenticate(BANKCARD, AMT, CURRENCY)
+        gateway.authenticate(AMT, CURRENCY)
     assert '500' in e.exconly()
-
-
-@mock_orm()
-@mock.patch('requests.post', **{'return_value.content': responses.MALFORMED,
-                                'return_value.status_code': 200})
-def test_params_are_passed_correctly(mocked_post):
-    gateway.authenticate(BANKCARD, AMT, CURRENCY)
-    passed_params = mocked_post.call_args[0][1]
-    assert passed_params['ExpiryDate'] == BANKCARD.expiry_date.strftime('%m%y')
-    assert passed_params['Amount'] == '10.00'
-    assert passed_params['Currency'] == 'GBP'
-    assert passed_params['CardHolder'] == BANKCARD.name
-    assert passed_params['CV2'] == BANKCARD.ccv
-    assert passed_params['CardType'] == 'VISA'  # Magic number looks like a VISA

@@ -89,14 +89,14 @@ PreviousTxn = collections.namedtuple(
     'PreviousTxn', ('vendor_tx_code', 'tx_id', 'tx_auth_num', 'security_key'))
 
 
-def _card_type(bankcard):
+def _card_type(bankcard_number):
     """
     Convert card-number into appropriate card type that Sagepay will
     recognise.
     """
     # Oscar provides a function to do the card-type recognition but we need to
     # map into the values that Sagepay accepts.
-    oscar_type = bankcards.bankcard_type(bankcard.number)
+    oscar_type = bankcards.bankcard_type(bankcard_number)
     mapping = {
         bankcards.VISA: 'VISA',
         bankcards.VISA_ELECTRON: 'UKE',
@@ -160,23 +160,24 @@ def payment(*args, **kwargs):
     return _request(config.VPS_REGISTER_URL, TXTYPE_AUTHENTICATE, params)
 
 
-def authenticate(bankcard, amount, currency, *args, **kwargs):
+def authenticate(amount, currency, **kwargs):
     """
     First part of 2-stage payment processing.
 
     Successful requests will get a status of REGISTERED
     """
+    bankcard_number = kwargs.get('bankcard_number', '')
     params = {
         # TXN DETAILS
         'Amount': str(amount),
         'Currency': currency,
         'Description': kwargs.get('description', ''),
         # BANKCARD DETAILS
-        'CardType': _card_type(bankcard),
-        'CardNumber': bankcard.number,
-        'CV2': bankcard.ccv,
-        'CardHolder': bankcard.name,
-        'ExpiryDate': bankcard.expiry_month('%m%y'),
+        'CardType': _card_type(bankcard_number),
+        'CardNumber': bankcard_number,
+        'CV2': kwargs.get('bankcard_ccv', ''),
+        'CardHolder': kwargs.get('bankcard.name', ''),
+        'ExpiryDate': kwargs.get('bankcard_expiry', ''),
         # BILLING DETAILS
         'BillingSurname': kwargs.get('billing_surname', ''),
         'BillingFirstnames': kwargs.get('billing_first_names', ''),
