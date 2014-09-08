@@ -1,0 +1,30 @@
+{% extends 'oscar/checkout/preview.html' %}
+{% load currency_filters %}
+{% load i18n %}
+
+{% block payment_method %}
+    <div class="span6">
+    <h2>{% trans "Payment" %}</h2>
+    <div class="well well-success" data-behaviours="match-height">
+
+        <h4>Bankcard</h4>
+        <p>{% blocktrans with amount=order_total.incl_tax|currency %}
+                <strong>{{ amount }}</strong> will be debited from your bankcard:
+        {% endblocktrans %}</p>
+        {% with bankcard=bankcard_form.bankcard %}
+            <p>
+            {% trans "Card type" %}: {{ bankcard.card_type }} <br/>
+            {% trans "Card number" %}: {{ bankcard.obfuscated_number }} <br/>
+            {% trans "Expiry month" %}: {{ bankcard.expiry_month }}</p>
+        {% endwith %}
+
+        <div class="alert-actions">
+            <a href="{% url 'checkout:payment-details' %}" class="btn">{% trans "Change payment details" %}</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block hiddenforms %}
+    {{ bankcard_form.as_p }}
+{% endblock %}

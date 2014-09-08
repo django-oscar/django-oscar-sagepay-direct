@@ -208,11 +208,14 @@ INSTALLED_APPS = [
     'django_extensions',
     'debug_toolbar',
     'south',
-    'compressor'
+    'compressor',
+    'oscar_sagepay',
 ]
 
 from oscar import get_core_apps
-INSTALLED_APPS = INSTALLED_APPS + get_core_apps()
+INSTALLED_APPS = INSTALLED_APPS + get_core_apps(
+    ['apps.checkout']
+)
 
 AUTHENTICATION_BACKENDS = (
     'oscar.apps.customer.auth_backends.Emailbackend',
@@ -232,8 +235,15 @@ HAYSTACK_CONNECTIONS = {
 # Oscar settings
 # ==============
 
-from oscar.defaults import *
+from oscar.defaults import *  # noqa
 
 OSCAR_ALLOW_ANON_CHECKOUT = True
 OSCAR_SHOP_TAGLINE = 'Sagepay'
 
+# Sagepay settings
+# ================
+
+try:
+    from private_settings import *  # noqa
+except ImportError:
+    pass
