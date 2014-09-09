@@ -53,9 +53,10 @@ def authenticate(amount, bankcard, shipping_address=None, billing_address=None,
         # Translate Sagepay gateway exceptions into Oscar checkout ones
         raise oscar_exceptions.PaymentError(e.message)
 
-    # Check if the transaction was successful
+    # Check if the transaction was successful (need to distinguish between
+    # customer errors and system errors).
     if not response.is_successful:
-        raise oscar_exceptions.UnableToTakePayment(
+        raise oscar_exceptions.PaymentError(
             response.status_detail)
 
     return response.tx_id

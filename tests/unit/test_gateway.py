@@ -48,6 +48,20 @@ def test_exception_raised_for_non_200_response():
     assert '500' in e.exconly()
 
 
+@stub_orm_create()
+def test_fields_are_truncated_to_fit_sagepay():
+    with mock.patch('requests.post') as post:
+        post.return_value = mock.MagicMock(
+            content=responses.MALFORMED,
+            status_code=200)
+        gateway.authenticate(
+            AMT, CURRENCY,
+            delivery_city="This is too long for Sagepay as they only allow 40"
+        )
+        args, __ = post.call_args
+        assert len(args[1]['DeliveryCity']) == 40
+
+
 @stub_sagepay_response()
 def test_audit_model_is_called_with_request_params():
     patch_kwargs = {
