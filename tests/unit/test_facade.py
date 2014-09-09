@@ -55,9 +55,9 @@ class TestAuthenticate:
         with pytest.raises(payment_exceptions.PaymentError):
             facade.authenticate(AMT, BANKCARD)
 
-    def test_raises_unable_to_pay_if_response_not_ok(self, gateway_authenticate):
+    def test_raises_payment_error_if_response_not_ok(self, gateway_authenticate):
         gateway_authenticate.return_value = mock.Mock(is_successful=False)
-        with pytest.raises(payment_exceptions.UnableToTakePayment):
+        with pytest.raises(payment_exceptions.PaymentError):
             facade.authenticate(AMT, BANKCARD)
 
     def test_returns_tx_id_if_successful(self, gateway_authenticate):

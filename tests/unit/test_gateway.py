@@ -15,7 +15,7 @@ BANKCARD = payment_models.Bankcard(
 AMT, CURRENCY = D('10.00'), 'GBP'
 
 
-def stub_response(content=responses.MALFORMED, status_code=200):
+def stub_sagepay_response(content=responses.MALFORMED, status_code=200):
     return mock.patch(
         'requests.post', new=mock.MagicMock(
             **{
@@ -24,7 +24,7 @@ def stub_response(content=responses.MALFORMED, status_code=200):
             }))
 
 
-def mock_orm():
+def stub_orm_create():
     rr = models.RequestResponse(id=1)
     rr.save = mock.Mock()
     return mock.patch(
@@ -33,16 +33,31 @@ def mock_orm():
             **{'create.return_value': rr}))
 
 
-@mock_orm()
-@stub_response()
+@stub_orm_create()
+@stub_sagepay_response()
 def test_authenticate_returns_response_obj():
     response = gateway.authenticate(AMT, CURRENCY)
     assert isinstance(response, wrappers.Response)
 
 
-@mock_orm()
-@stub_response(status_code=500)
+@stub_orm_create()
+@stub_sagepay_response(status_code=500)
 def test_exception_raised_for_non_200_response():
     with pytest.raises(Exception) as e:
         gateway.authenticate(AMT, CURRENCY)
     assert '500' in e.exconly()
+
+
+@stub_sagepay_response()
+def test_audit_model_is_called_with_request_params():
+    patch_kwargs = {
+        'target': 'oscar_sagepay.models.RequestResponse.objects.create',
+    }
+    instance = mock.MagicMock(id=1)
+    with mock.patch(**patch_kwargs) as create:
+        create.return_value = instance
+        gateway.authenticate(AMT, CURRENCY)
+
+    call_params = instance.record_request.call_args[0][0]
+    for key in ('VPSProtocol', 'Vendor', 'TxType'):
+        assert key in call_params
