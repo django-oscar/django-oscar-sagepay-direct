@@ -5,6 +5,7 @@ from django.utils.translation import ugettext as _
 
 from oscar.apps.checkout.views import PaymentDetailsView as OscarPaymentDetailsView
 from oscar.apps.payment.models import SourceType, Source
+from oscar.apps.payment.forms import BillingAddressForm
 
 from oscar_sagepay import facade, forms
 
@@ -12,7 +13,7 @@ from oscar_sagepay import facade, forms
 class PaymentDetailsView(OscarPaymentDetailsView):
 
     def get_context_data(self, **kwargs):
-        # Add bankcard form to the template context
+        # Add bankcard and billing address forms to the template context
         ctx = super(PaymentDetailsView, self).get_context_data(**kwargs)
         # Create a default form (with some dummy data)
         form = forms.BankcardForm(initial={
@@ -21,28 +22,43 @@ class PaymentDetailsView(OscarPaymentDetailsView):
             'ccv': '123'})
         ctx['bankcard_form'] = kwargs.get(
             'bankcard_form', form)
+        ctx['billing_address_form'] = kwargs.get(
+            'billing_address_form', BillingAddressForm())
         return ctx
 
     def handle_payment_details_submission(self, request):
-        # Check bankcard form is valid
+        # Check forms are valid
         bankcard_form = forms.BankcardForm(request.POST)
-        if bankcard_form.is_valid():
+        billing_address_form = BillingAddressForm(request.POST)
+        if bankcard_form.is_valid() and billing_address_form.is_valid():
+            # Forms are valid - render preview with forms hidden in the page
             return self.render_preview(
-                request, bankcard_form=bankcard_form)
+                request, bankcard_form=bankcard_form,
+                billing_address=billing_address_form.save(commit=False))
 
         # Form invalid - re-render
         return self.render_payment_details(
-            request, bankcard_form=bankcard_form)
+            request, bankcard_form=bankcard_form,
+            billing_address_form=billing_address_form)
 
     def handle_place_order_submission(self, request):
+        # Check data from hidden forms again to ensure it hasn't been tampered
+        # with.
         bankcard_form = forms.BankcardForm(request.POST)
-        if bankcard_form.is_valid():
+        billing_address_form = BillingAddressForm(request.POST)
+        if bankcard_form.is_valid() and billing_address_form.is_valid():
+            # Data is ok - submit order
             submission = self.build_submission(
+                order_kwargs={
+                    'billing_address': billing_address_form.save(commit=False)
+                },
                 payment_kwargs={
-                    'bankcard_form': bankcard_form
+                    'bankcard_form': bankcard_form,
+                    'billing_address_form': billing_address_form,
                 })
             return self.submit(**submission)
 
+        # If we get here, it means the hidden forms have been tampered with.
         messages.error(request, _("Invalid submission"))
         return http.HttpResponseRedirect(
             reverse('checkout:payment-details'))
@@ -55,10 +71,11 @@ class PaymentDetailsView(OscarPaymentDetailsView):
         return submission
 
     def handle_payment(self, order_number, total, bankcard_form,
-                       shipping_address, **kwargs):
+                       billing_address_form, shipping_address, **kwargs):
         tx_id = facade.authenticate(
             amount=total, bankcard=bankcard_form.bankcard,
-            shipping_address=shipping_address)
+            shipping_address=shipping_address,
+            billing_address=billing_address_form.save(commit=False))
 
         # Request was successful - record the "payment source".  As this
         # request was a 'pre-auth', we set the 'amount_allocated' - if we had

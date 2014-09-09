@@ -8,7 +8,8 @@ from oscar.apps.payment import exceptions as oscar_exceptions
 from . import gateway, exceptions
 
 
-def authenticate(amount, bankcard, shipping_address=None, description=''):
+def authenticate(amount, bankcard, shipping_address=None, billing_address=None,
+                 description=''):
     """
     Perform an AUTHENTICATE request and return the TX ID if successful.
     """
@@ -33,6 +34,17 @@ def authenticate(amount, bankcard, shipping_address=None, description=''):
             'delivery_country': shipping_address.country.code,
             'delivery_state': shipping_address.state,
             'delivery_phone': shipping_address.phone_number,
+        })
+    if billing_address:
+        params.update({
+            'billing_surname': billing_address.last_name,
+            'billing_first_names': billing_address.first_name,
+            'billing_address1': billing_address.line1,
+            'billing_address2': billing_address.line2,
+            'billing_city': billing_address.line4,
+            'billing_postcode': billing_address.postcode,
+            'billing_country': billing_address.country.code,
+            'billing_state': billing_address.state,
         })
 
     try:

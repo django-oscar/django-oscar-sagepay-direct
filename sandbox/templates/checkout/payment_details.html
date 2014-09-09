@@ -5,7 +5,10 @@
     <h2>Sagepay DIRECT integration</h2>
     <form action="{% url 'checkout:preview' %}" class="form-stacked" method="POST">
         {% csrf_token %}
+        <h3>Bankcard</h3>
         {% include "partials/form_fields.html" with form=bankcard_form %}
+        <h3>Billing address</h3>
+        {% include "partials/form_fields.html" with form=billing_address_form %}
         <button type="submit" value="{% trans "Continue" %}" class="btn btn-primary btn-large">{% trans "Continue" %}</button>
     </form>
 {% endblock %}

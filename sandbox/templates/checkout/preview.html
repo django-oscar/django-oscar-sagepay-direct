@@ -18,6 +18,19 @@
             {% trans "Expiry month" %}: {{ bankcard.expiry_month }}</p>
         {% endwith %}
 
+        <h4>Billing address</h4>
+        <address>
+            {% for field in billing_address.active_address_fields %}
+                {{ field }}<br/>
+            {% endfor %}
+        </address>
+        {% if billing_address.phone_number %}
+            <h4>{% trans "Contact" %}</h4>
+            <p>
+                {% trans "Phone" %}: {{ billing_address.phone_number }}
+            </p>
+        {% endif %}
+
         <div class="alert-actions">
             <a href="{% url 'checkout:payment-details' %}" class="btn">{% trans "Change payment details" %}</a>
         </div>
