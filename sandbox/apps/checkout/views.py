@@ -34,7 +34,8 @@ class PaymentDetailsView(OscarPaymentDetailsView):
             # Forms are valid - render preview with forms hidden in the page
             return self.render_preview(
                 request, bankcard_form=bankcard_form,
-                billing_address=billing_address_form.save(commit=False))
+                billing_address=billing_address_form.save(commit=False),
+                billing_address_form=billing_address_form)
 
         # Form invalid - re-render
         return self.render_payment_details(
