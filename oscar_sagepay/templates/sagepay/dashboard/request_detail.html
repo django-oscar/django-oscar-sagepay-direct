@@ -39,7 +39,7 @@
             <tr><th>{% trans "TX type" %}</th><td>{{ txn.tx_type }}</td></tr>
             <tr><th>{% trans "Amount" %}</th><td>{{ txn.amount|currency:txn.currency }}</td></tr>
             <tr><th>{% trans "Description" %}</th><td>{{ txn.description|default:"-" }}</td></tr>
-            <tr><th>{% trans "Raw request" %}</th><td>{{ txn.raw_request_json }}</td></tr>
+            <tr><th>{% trans "Raw request" %}</th><td>{{ txn.request_as_html|safe }}</td></tr>
             <tr><th>{% trans "Requested at" %}</th><td>{{ txn.request_datetime }}</td></tr>
         </tbody>
     </table>

@@ -1,14 +1,12 @@
 from django import http
 from django.core.urlresolvers import reverse
 from django.contrib import messages
-from django.conf import settings
 from django.utils.translation import ugettext as _
 
 from oscar.apps.checkout.views import PaymentDetailsView as OscarPaymentDetailsView
-from oscar.apps.payment.forms import BankcardForm
 from oscar.apps.payment.models import SourceType, Source
 
-from oscar_sagepay import facade
+from oscar_sagepay import facade, forms
 
 
 class PaymentDetailsView(OscarPaymentDetailsView):
@@ -16,12 +14,18 @@ class PaymentDetailsView(OscarPaymentDetailsView):
     def get_context_data(self, **kwargs):
         # Add bankcard form to the template context
         ctx = super(PaymentDetailsView, self).get_context_data(**kwargs)
-        ctx['bankcard_form'] = kwargs.get('bankcard_form', BankcardForm())
+        # Create a default form (with some dummy data)
+        form = forms.BankcardForm(initial={
+            'name': 'Lord Business',
+            'number': '4111111111111111',
+            'ccv': '123'})
+        ctx['bankcard_form'] = kwargs.get(
+            'bankcard_form', form)
         return ctx
 
     def handle_payment_details_submission(self, request):
         # Check bankcard form is valid
-        bankcard_form = BankcardForm(request.POST)
+        bankcard_form = forms.BankcardForm(request.POST)
         if bankcard_form.is_valid():
             return self.render_preview(
                 request, bankcard_form=bankcard_form)
@@ -31,7 +35,7 @@ class PaymentDetailsView(OscarPaymentDetailsView):
             request, bankcard_form=bankcard_form)
 
     def handle_place_order_submission(self, request):
-        bankcard_form = BankcardForm(request.POST)
+        bankcard_form = forms.BankcardForm(request.POST)
         if bankcard_form.is_valid():
             submission = self.build_submission(
                 payment_kwargs={

@@ -31,9 +31,12 @@ class RequestResponse(models.Model):
     tx_id = models.CharField(max_length=128, blank=True)
     tx_auth_num = models.CharField(max_length=32, blank=True)
     security_key = models.CharField(max_length=128, blank=True)
-    raw_response = models.TextField(blank=True)
 
+    raw_response = models.TextField(blank=True)
     response_datetime = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ('-request_datetime',)
 
     def __unicode__(self):
         return self.vendor_tx_code
@@ -41,6 +44,14 @@ class RequestResponse(models.Model):
     @property
     def raw_request(self):
         return json.loads(self.raw_request_json)
+
+    def request_as_html(self):
+        rows = []
+        for k, v in sorted(self.raw_request.items()):
+            rows.append(
+                '<dt>%s</dt><dd>%s</dd>' % (k, v))
+        return '<dl>%s</dl>' % ''.join(rows)
+    request_as_html.allow_tags = True
 
     def record_request(self, params):
         """

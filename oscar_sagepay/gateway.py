@@ -111,7 +111,7 @@ def authenticate(amount, currency, **kwargs):
         'CardType': _card_type(bankcard_number),
         'CardNumber': bankcard_number,
         'CV2': kwargs.get('bankcard_ccv', ''),
-        'CardHolder': kwargs.get('bankcard.name', ''),
+        'CardHolder': kwargs.get('bankcard_name', ''),
         'ExpiryDate': kwargs.get('bankcard_expiry', ''),
         # BILLING DETAILS
         'BillingSurname': kwargs.get('billing_surname', ''),
