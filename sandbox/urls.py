@@ -6,6 +6,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 
 from oscar.app import application
+from oscar_sagepay.dashboard.app import application as dashboard_app
 
 admin.autodiscover()
 
@@ -16,6 +17,7 @@ urlpatterns = patterns(
 )
 urlpatterns += i18n_patterns(
     '',
+    (r'^dashboard/sagepay/', dashboard_app.urls),
     (r'', include(application.urls)),
 )
 

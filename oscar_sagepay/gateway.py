@@ -5,7 +5,7 @@ import random
 import requests
 from oscar.apps.payment import bankcards
 
-from . import models, exceptions, config
+from . import models, exceptions, config, wrappers
 
 # TxTypes
 TXTYPE_PAYMENT = 'PAYMENT'
@@ -15,73 +15,8 @@ TXTYPE_AUTHORISE = 'AUTHORISE'
 TXTYPE_REFUND = 'REFUND'
 
 
-__all__ = ['PreviousTxn', 'payment', 'authenticate',
-           'authorise', 'cancel', 'refund']
-
-
-class Response(object):
-    """
-    Response object wrapping providing easy access to the returned parameters
-    """
-    # Statuses
-    OK = 'OK'
-    OK_REPEATED = 'OK REPEATED'
-    MALFORMED = 'MALFORMED'
-    INVALID = 'INVALID'
-    ERROR = 'ERROR'
-    REGISTERED = 'REGISTERED'
-
-    def __init__(self, vendor_tx_code, response_content):
-        # We pass in the vendor tx code as it's required in several places as a
-        # parameter to subsequent payment calls but is missing from the
-        # response params.
-        self.vendor_tx_code = vendor_tx_code
-        self.raw = response_content
-        self._params = dict(
-            line.split('=', 1) for line in
-            response_content.strip().split("\r\n"))
-
-    def __str__(self):
-        return '<Response status="%s" msg="%s">' % (
-            self.status, self.status_detail)
-
-    def param(self, key, default=None):
-        """
-        Extract a parameter from the response
-        """
-        return self._params.get(key, default)
-
-    # Syntactic sugar
-
-    @property
-    def status(self):
-        return self.param('Status', '')
-
-    @property
-    def status_detail(self):
-        return self.param('StatusDetail', '')
-
-    @property
-    def tx_id(self):
-        return self.param('VPSTxId', '')
-
-    @property
-    def tx_auth_num(self):
-        return self.param('TxAuthNo', '')
-
-    @property
-    def security_key(self):
-        return self.param('SecurityKey', '')
-
-    # Predicates
-
-    @property
-    def is_successful(self):
-        return self.status in (self.OK, self.OK_REPEATED)
-
-    @property
-    def is_registered(self):
-        return self.status == self.REGISTERED
+__all__ = ['PreviousTxn', 'payment', 'authenticate', 'authorise', 'cancel',
+           'refund']
 
 
 # Datastructure for wrapping up details of a previous transaction
@@ -143,7 +78,7 @@ def _request(url, tx_type, params):
         raise exceptions.GatewayError(
             "Sagepay server returned a %s response with content %s" % (
                 http_response.status_code, http_response.content))
-    sp_response = Response(vendor_tx_code, http_response.content)
+    sp_response = wrappers.Response(vendor_tx_code, http_response.content)
 
     # Update audit model with response info
     rr.record_response(sp_response)

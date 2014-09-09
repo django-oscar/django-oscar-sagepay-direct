@@ -1,0 +1,64 @@
+{% extends 'dashboard/layout.html' %}
+{% load url from future %}
+{% load i18n %}
+{% load currency_filters %}
+
+{% block title %}
+    {% trans "Sagepay transactions" %} | {{ block.super }}
+{% endblock %}
+
+{% block breadcrumbs %}
+<ul class="breadcrumb">
+    <li>
+        <a href="{% url 'dashboard:index' %}">{% trans "Dashboard" %}</a>
+        <span class="divider">/</span>
+    </li>
+    <li class="active">{% trans "Sagepay transactions" %}</li>
+</ul>
+{% endblock %}
+
+{% block headertext %}
+    {% trans "Sagepay transactions" %}
+{% endblock %}
+
+{% block dashboard_content %}
+    {% if transactions %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>{% trans "Vendor TX code" %}</th>
+                    <th>{% trans "TX type" %}</th>
+                    <th>{% trans "Amount" %}</th>
+                    <th>{% trans "Description" %}</th>
+                    <th>{% trans "Status" %}</th>
+                    <th>{% trans "Status detail" %}</th>
+                    <th>{% trans "TX ID" %}</th>
+                    <th>{% trans "TX auth num" %}</th>
+                    <th>{% trans "Date" %}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for txn in transactions %}
+            <tr class="{% if txn.is_successful %}success{% elif txn.is_error %}error{% else %}info{% endif %}">
+                <td><a href="{% url 'sagepay-transaction-detail' txn.pk %}">{{ txn.vendor_tx_code }}</a></td>
+                <td>{{ txn.tx_type }}</td>
+                <td>{{ txn.amount|currency:txn.currency }}</td>
+                <td>{{ txn.description|default:"-" }}</td>
+                <td>{{ txn.status|default:"-" }}</td>
+                <td>{{ txn.status_detail|default:"-" }}</td>
+                <td>{{ txn.tx_id|default:"-" }}</td>
+                <td>{{ txn.tx_auth_num|default:"-" }}</td>
+                <td>{{ txn.request_datetime }}</td>
+                <td>
+                    <a href="{% url 'sagepay-transaction-detail' txn.pk %}" class="btn btn-info">{% trans "View" %}</a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% include "partials/pagination.html" %}
+    {% else %}
+        <p>{% trans "No transactions have been made yet." %}</p>
+    {% endif %}
+{% endblock dashboard_content %}

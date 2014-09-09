@@ -1,0 +1,59 @@
+{% extends 'dashboard/layout.html' %}
+{% load url from future %}
+{% load currency_filters %}
+{% load i18n %}
+
+{% block title %}
+    {% blocktrans with id=txn.vendor_tx_code %}
+        Sagepay transaction {{ id }}
+    {% endblocktrans %}
+{% endblock %}
+
+{% block breadcrumbs %}
+<ul class="breadcrumb">
+    <li>
+        <a href="{% url 'dashboard:index' %}">{% trans "Dashboard" %}</a>
+        <span class="divider">/</span>
+    </li>
+    <li>
+        <a href="{% url 'sagepay-transaction-list' %}">{% trans "Sagepay" %}</a>
+        <span class="divider">/</span>
+    </li>
+	<li class="active">{{ txn.vendor_tx_code }}</li>
+</ul>
+{% endblock %}
+
+{% block headertext %}
+    {% blocktrans with id=txn.vendor_tx_code %}
+        Transaction {{ id }}
+    {% endblocktrans %}
+{% endblock %}
+
+{% block dashboard_content %}
+    <h2>{% trans "Request" %}</h2>
+    <table class="table table-striped table-bordered">
+        <tbody>
+            <tr><th>{% trans "Vendor TX code" %}</th><td>{{ txn.vendor_tx_code }}</td></tr>
+            <tr><th>{% trans "Protocol " %}</th><td>{{ txn.protocol }}</td></tr>
+            <tr><th>{% trans "Vendor" %}</th><td>{{ txn.vendor }}</td></tr>
+            <tr><th>{% trans "TX type" %}</th><td>{{ txn.tx_type }}</td></tr>
+            <tr><th>{% trans "Amount" %}</th><td>{{ txn.amount|currency:txn.currency }}</td></tr>
+            <tr><th>{% trans "Description" %}</th><td>{{ txn.description|default:"-" }}</td></tr>
+            <tr><th>{% trans "Raw request" %}</th><td>{{ txn.raw_request_json }}</td></tr>
+            <tr><th>{% trans "Requested at" %}</th><td>{{ txn.request_datetime }}</td></tr>
+        </tbody>
+    </table>
+    <h2>{% trans "Response" %}</h2>
+    <table class="table table-striped table-bordered">
+        <tbody>
+            <tr><th>{% trans "Status" %}</th><td>{{ txn.status }}</td></tr>
+            <tr><th>{% trans "Status detail " %}</th><td>{{ txn.status_detail }}</td></tr>
+            <tr><th>{% trans "TX ID" %}</th><td>{{ txn.tx_id|default:"-" }}</td></tr>
+            <tr><th>{% trans "TX auth num" %}</th><td>{{ txn.tx_auth_num|default:"-" }}</td></tr>
+            <tr><th>{% trans "Security key" %}</th><td>{{ txn.security_key|default:"-" }}</td></tr>
+            <tr><th>{% trans "Raw_response" %}</th><td>{{ txn.raw_response }}</td></tr>
+            <tr><th>{% trans "Response at" %}</th><td>{{ txn.response_datetime }}</td></tr>
+            <tr><th>{% trans "Response time" %}</th><td>{{ txn.response_time_as_ms }}ms</td></tr>
+        </tbody>
+    </table>
+{% endblock dashboard_content %}

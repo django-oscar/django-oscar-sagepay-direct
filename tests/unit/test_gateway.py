@@ -5,7 +5,7 @@ import pytest
 import mock
 from oscar.apps.payment import models as payment_models
 
-from oscar_sagepay import gateway, models
+from oscar_sagepay import gateway, models, wrappers
 from tests import responses
 
 # Fixtures
@@ -25,19 +25,19 @@ def stub_response(content=responses.MALFORMED, status_code=200):
 
 
 def mock_orm():
-    response = models.RequestResponse(id=1)
-    response.save = mock.Mock()
+    rr = models.RequestResponse(id=1)
+    rr.save = mock.Mock()
     return mock.patch(
         'oscar_sagepay.models.RequestResponse.objects',
         new=mock.MagicMock(
-            **{'create.return_value': response}))
+            **{'create.return_value': rr}))
 
 
 @mock_orm()
 @stub_response()
 def test_authenticate_returns_response_obj():
     response = gateway.authenticate(AMT, CURRENCY)
-    assert isinstance(response, gateway.Response)
+    assert isinstance(response, wrappers.Response)
 
 
 @mock_orm()

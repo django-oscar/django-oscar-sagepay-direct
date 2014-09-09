@@ -1,6 +1,9 @@
 import json
 
 from django.db import models
+from django.utils.timezone import now
+
+from . import wrappers
 
 
 class RequestResponse(models.Model):
@@ -20,6 +23,7 @@ class RequestResponse(models.Model):
     description = models.CharField(max_length=512, blank=True)
 
     raw_request_json = models.TextField(blank=True)
+    request_datetime = models.DateTimeField(null=True, blank=True)
 
     # Response fields
     status = models.CharField(max_length=128, blank=True)
@@ -29,7 +33,7 @@ class RequestResponse(models.Model):
     security_key = models.CharField(max_length=128, blank=True)
     raw_response = models.TextField(blank=True)
 
-    date_created = models.DateTimeField(auto_now_add=True)
+    response_datetime = models.DateTimeField(null=True, blank=True)
 
     def __unicode__(self):
         return self.vendor_tx_code
@@ -58,6 +62,7 @@ class RequestResponse(models.Model):
             if key in safe_params:
                 safe_params[key] = '<removed>'
         self.raw_request_json = json.dumps(safe_params)
+        self.request_datetime = now()
 
     def record_response(self, response):
         """
@@ -69,3 +74,21 @@ class RequestResponse(models.Model):
         self.tx_auth_num = response.tx_auth_num
         self.security_key = response.security_key
         self.raw_response = response.raw
+        self.response_datetime = now()
+
+    @property
+    def response(self):
+        return wrappers.Response(self.vendor_tx_code, self.raw_response)
+
+    @property
+    def is_error(self):
+        return self.response.is_error
+
+    @property
+    def is_successful(self):
+        return self.response.is_successful
+
+    @property
+    def response_time_as_ms(self):
+        delta = self.response_datetime - self.request_datetime
+        return 1000 * delta.seconds + delta.microseconds / 1000

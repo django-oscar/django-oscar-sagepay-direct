@@ -240,6 +240,18 @@ from oscar.defaults import *  # noqa
 OSCAR_ALLOW_ANON_CHECKOUT = True
 OSCAR_SHOP_TAGLINE = 'Sagepay'
 
+OSCAR_DASHBOARD_NAVIGATION.append(
+    {
+        'label': 'Sagepay',
+        'icon': 'icon-globe',
+        'children': [
+            {
+                'label': 'Transactions',
+                'url_name': 'sagepay-transaction-list',
+            },
+        ]
+    })
+
 # Sagepay settings
 # ================
 
