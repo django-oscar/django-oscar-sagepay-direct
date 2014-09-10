@@ -4,6 +4,11 @@
 {% load currency_filters %}
 
 {% block title %}
+    {% if query %}
+        {% blocktrans %}
+            Transactions matching '{{ query }}' |
+        {% endblocktrans %}
+    {% endif %}
     {% trans "Sagepay transactions" %} | {{ block.super }}
 {% endblock %}
 
@@ -13,15 +18,42 @@
         <a href="{% url 'dashboard:index' %}">{% trans "Dashboard" %}</a>
         <span class="divider">/</span>
     </li>
-    <li class="active">{% trans "Sagepay transactions" %}</li>
+    {% if query %}
+        <li>
+            <a href="{% url 'sagepay-transaction-list' %}">{% trans "Sagepay transactions" %}</a>
+            <span class="divider">/</span>
+        </li>
+        <li class="active">
+            {% blocktrans %}
+                Transactions matching '{{ query }}'
+            {% endblocktrans %}
+        </li>
+    {% else %}
+        <li class="active">{% trans "Sagepay transactions" %}</li>
+    {% endif %}
 </ul>
 {% endblock %}
 
 {% block headertext %}
-    {% trans "Sagepay transactions" %}
+    {% if query %}
+        {% blocktrans %}
+            Transactions matching '{{ query }}'
+        {% endblocktrans %}
+    {% else %}
+        {% trans "Sagepay transactions" %}
+    {% endif %}
 {% endblock %}
 
 {% block dashboard_content %}
+    <div class="well">
+        <form action="." method="get" class="form-inline">
+            {% include "partials/form_fields_inline.html" %}
+            <button class="btn btn-primary" type="submit">{% trans "Go" %}</button>
+            {% if query %}
+                <a class="btn" href=".">{% trans "Reset" %}</a>
+            {% endif %}
+        </form>
+    </div>
     {% if transactions %}
         <table class="table table-bordered">
             <thead>
@@ -59,6 +91,6 @@
         </table>
         {% include "partials/pagination.html" %}
     {% else %}
-        <p>{% trans "No transactions have been made yet." %}</p>
+        <p>{% trans "No transactions found." %}</p>
     {% endif %}
 {% endblock dashboard_content %}
