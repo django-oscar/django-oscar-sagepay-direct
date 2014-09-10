@@ -101,6 +101,11 @@ def authenticate(amount, currency, **kwargs):
 
     Successful requests will get a status of REGISTERED
     """
+    # Ensure no None values in kwargs
+    for k, v in kwargs.items():
+        if v is None:
+            kwargs[k] = ''
+
     bankcard_number = kwargs.get('bankcard_number', '')
     params = {
         # TXN DETAILS

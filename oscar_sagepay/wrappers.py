@@ -24,6 +24,8 @@ class Response(object):
         return '<Response status="%s" msg="%s">' % (
             self.status, self.status_detail)
 
+    __repr__ = __str__
+
     def param(self, key, default=None):
         """
         Extract a parameter from the response
@@ -56,7 +58,7 @@ class Response(object):
 
     @property
     def is_successful(self):
-        return self.status in (self.OK, self.OK_REPEATED)
+        return self.status in (self.REGISTERED, self.OK, self.OK_REPEATED)
 
     @property
     def is_registered(self):
