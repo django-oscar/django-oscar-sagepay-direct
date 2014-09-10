@@ -71,7 +71,7 @@ def authorise(tx_id, amount=None, description=None):
             tx_id=tx_id)
     except models.RequestResponse.DoesNotExist:
         raise oscar_exceptions.PaymentError(
-            "No historick transaction found with ID %s" % tx_id)
+            "No historic transaction found with ID %s" % tx_id)
 
     # Marshall data for passing to gateway
     previous_txn = gateway.PreviousTxn(
@@ -90,6 +90,57 @@ def authorise(tx_id, amount=None, description=None):
     }
     try:
         response = gateway.authorise(**params)
+    except exceptions.GatewayError as e:
+        raise oscar_exceptions.PaymentError(e.message)
+    if not response.is_ok:
+        raise oscar_exceptions.PaymentError(
+            response.status_detail)
+    return response.tx_id
+
+
+def refund(tx_id, amount=None, description=None):
+    """
+    Perform a REFUND request against a previous transaction. The passed tx_id
+    should be from the original AUTHENTICATE request.
+    """
+    # Fetch the AUTHENTICATE txn
+    try:
+        authenticate_txn = models.RequestResponse.objects.get(
+            tx_id=tx_id, tx_type=gateway.TXTYPE_AUTHENTICATE)
+    except models.RequestResponse.DoesNotExist:
+        raise oscar_exceptions.PaymentError(
+            "No historic transaction found with ID %s" % tx_id)
+
+    # Fetch the related (successful) AUTHORISE txn
+    try:
+        authorise_txn = models.RequestResponse.objects.get(
+            related_tx_id=authenticate_txn.tx_id,
+            tx_type=gateway.TXTYPE_AUTHORISE, status='OK'
+        )
+    except models.RequestResponse.DoesNotExist:
+        raise oscar_exceptions.PaymentError((
+            "No successful authorise transaction found for the "
+            "AUTHENTICATE transaction with ID %s") % tx_id)
+
+    # Contrary to the docs, we provide the details of the AUTHORISE request and
+    # don't include anything from the AUTHENTICATE one.
+    previous_txn = gateway.PreviousTxn(
+        vendor_tx_code=authorise_txn.vendor_tx_code,
+        tx_id=authorise_txn.tx_id,
+        tx_auth_num=authorise_txn.tx_auth_num,
+        security_key=authorise_txn.security_key)
+    if amount is None:
+        amount = authenticate_txn.amount
+    if description is None:
+        description = "Refund TX ID %s" % tx_id
+    params = {
+        'previous_txn': previous_txn,
+        'amount': amount,
+        'currency': authenticate_txn.currency,
+        'description': description,
+    }
+    try:
+        response = gateway.refund(**params)
     except exceptions.GatewayError as e:
         raise oscar_exceptions.PaymentError(e.message)
     if not response.is_ok:

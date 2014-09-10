@@ -49,9 +49,19 @@
             <tr><th>{% trans "Status" %}</th><td>{{ txn.status }}</td></tr>
             <tr><th>{% trans "Status detail " %}</th><td>{{ txn.status_detail }}</td></tr>
             <tr><th>{% trans "TX ID" %}</th><td>{{ txn.tx_id|default:"-" }}</td></tr>
+            <tr>
+                <th>{% trans "Related TX ID" %}</th>
+                <td>
+                    {% if txn.related_tx_id %}
+                        <a href="{% url 'sagepay-transaction-list' %}?q={{ txn.related_tx_id }}">{{ txn.related_tx_id }}</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
             <tr><th>{% trans "TX auth num" %}</th><td>{{ txn.tx_auth_num|default:"-" }}</td></tr>
             <tr><th>{% trans "Security key" %}</th><td>{{ txn.security_key|default:"-" }}</td></tr>
-            <tr><th>{% trans "Raw_response" %}</th><td>{{ txn.raw_response }}</td></tr>
+            <tr><th>{% trans "Raw response" %}</th><td>{{ txn.raw_response }}</td></tr>
             <tr><th>{% trans "Response at" %}</th><td>{{ txn.response_datetime }}</td></tr>
             <tr><th>{% trans "Response time" %}</th><td>{{ txn.response_time_as_ms }}ms</td></tr>
         </tbody>

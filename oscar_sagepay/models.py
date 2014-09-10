@@ -35,6 +35,9 @@ class RequestResponse(models.Model):
     raw_response = models.TextField(blank=True)
     response_datetime = models.DateTimeField(null=True, blank=True)
 
+    related_tx_id = models.CharField(max_length=128, blank=True,
+                                      db_index=True)
+
     class Meta:
         ordering = ('-request_datetime',)
 
@@ -64,6 +67,11 @@ class RequestResponse(models.Model):
         self.amount = params['Amount']
         self.currency = params.get('Currency', '')
         self.description = params.get('Description', '')
+
+        # Where relevant, we keep a reference to the transaction that this one
+        # is a follow-up to. We need to this to look up auth numbers before
+        # doing refunds.
+        self.related_tx_id = params.get('RelatedVPSTxId', '')
 
         # Remove cardholder data so we can keep our PCI compliance level down
         sensitive_fields = (

@@ -107,3 +107,59 @@ class TestAuthorise:
             authorise.return_value = mock.MagicMock(is_ok=False)
             with pytest.raises(payment_exceptions.PaymentError):
                 facade.authorise(tx_id='123')
+
+
+@mock.patch('oscar_sagepay.models.RequestResponse.objects.get')
+class TestRefund:
+
+    def test_raises_payment_error_for_unknown_tx_id(self, get):
+        get.side_effect = models.RequestResponse.DoesNotExist
+        with pytest.raises(payment_exceptions.PaymentError):
+            facade.refund(tx_id='123')
+
+    def test_raises_payment_error_for_missing_related_txn(self, get):
+        # Second call will raise exception
+        get.side_effect = [
+            mock.MagicMock(), models.RequestResponse.DoesNotExist]
+        with pytest.raises(payment_exceptions.PaymentError):
+            facade.refund(tx_id='123')
+
+    def test_calls_gateway_with_correct_data(self, get):
+        get.side_effect = [
+            mock.MagicMock(vendor_tx_code='v1', tx_id='123',
+                           tx_auth_num='', security_key='xx',
+                           currency='GBP'),
+            mock.MagicMock(vendor_tx_code='v2', tx_id='124',
+                           tx_auth_num='999', security_key='xy')]
+        with mock.patch('oscar_sagepay.gateway.refund') as refund:
+            facade.refund(tx_id='123')
+            kwargs = refund.call_args[1]
+            assert kwargs['previous_txn'].vendor_tx_code == 'v2'
+            assert kwargs['previous_txn'].tx_id == '124'
+            assert kwargs['previous_txn'].tx_auth_num == '999'
+            assert kwargs['previous_txn'].security_key == 'xy'
+            assert kwargs['currency'] == 'GBP'
+
+    def test_gateway_error_raises_payment_error(self, get):
+        get.side_effect = [
+            mock.MagicMock(vendor_tx_code='v1', tx_id='123',
+                           tx_auth_num='', security_key='xx',
+                           currency='GBP'),
+            mock.MagicMock(vendor_tx_code='v2', tx_id='124',
+                           tx_auth_num='999', security_key='xy')]
+        with mock.patch('oscar_sagepay.gateway.refund') as refund:
+            refund.side_effect = exceptions.GatewayError
+            with pytest.raises(payment_exceptions.PaymentError):
+                facade.refund(tx_id='123')
+
+    def test_not_ok_response_raises_payment_error(self, get):
+        get.side_effect = [
+            mock.MagicMock(vendor_tx_code='v1', tx_id='123',
+                           tx_auth_num='', security_key='xx',
+                           currency='GBP'),
+            mock.MagicMock(vendor_tx_code='v2', tx_id='124',
+                           tx_auth_num='999', security_key='xy')]
+        with mock.patch('oscar_sagepay.gateway.refund') as refund:
+            refund.return_value = mock.MagicMock(is_ok=False)
+            with pytest.raises(payment_exceptions.PaymentError):
+                facade.refund(tx_id='123')

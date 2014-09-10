@@ -19,8 +19,13 @@ urlpatterns = patterns(
 urlpatterns += i18n_patterns(
     '',
     (r'^dashboard/sagepay/', dashboard_app.urls),
+
+    # Custom views for testing dashboard actions
     url(r'^dashboard/orders/(?P<number>[-\w]+)/authorise/',
         views.AuthorisePayment.as_view(), name='sagepay-authorise'),
+    url(r'^dashboard/orders/(?P<number>[-\w]+)/refund/',
+        views.RefundPayment.as_view(), name='sagepay-refund'),
+
     (r'', include(application.urls)),
 )
 
