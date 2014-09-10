@@ -7,6 +7,7 @@ from django.conf.urls.static import static
 
 from oscar.app import application
 from oscar_sagepay.dashboard.app import application as dashboard_app
+from apps import views
 
 admin.autodiscover()
 
@@ -18,6 +19,8 @@ urlpatterns = patterns(
 urlpatterns += i18n_patterns(
     '',
     (r'^dashboard/sagepay/', dashboard_app.urls),
+    url(r'^dashboard/orders/(?P<number>[-\w]+)/authorise/',
+        views.AuthorisePayment.as_view(), name='sagepay-authorise'),
     (r'', include(application.urls)),
 )
 

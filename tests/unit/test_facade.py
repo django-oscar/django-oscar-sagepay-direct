@@ -7,7 +7,7 @@ from oscar.core import prices
 import mock
 import pytest
 
-from oscar_sagepay import facade, exceptions
+from oscar_sagepay import facade, exceptions, models
 from tests import factories
 
 
@@ -64,3 +64,46 @@ class TestAuthenticate:
         gateway_authenticate.return_value = mock.Mock(tx_id='123xxx')
         tx_id = facade.authenticate(AMT, BANKCARD)
         assert tx_id == '123xxx'
+
+
+@mock.patch('oscar_sagepay.models.RequestResponse.objects.get')
+class TestAuthorise:
+
+    def test_raises_payment_error_if_no_matching_audit_model(self, get):
+        get.side_effect = models.RequestResponse.DoesNotExist
+        with pytest.raises(payment_exceptions.PaymentError):
+            facade.authorise(tx_id='123')
+
+    def test_calls_gateway_with_correct_data(self, get):
+        get.return_value = mock.MagicMock(
+            vendor_tx_code='v1', tx_id='123', tx_auth_num='', security_key='xx')
+        with mock.patch('oscar_sagepay.gateway.authorise') as authorise:
+            facade.authorise(tx_id='123', amount=D('10.00'))
+            kwargs = authorise.call_args[1]
+        assert kwargs['previous_txn'].vendor_tx_code == 'v1'
+        assert kwargs['previous_txn'].tx_id == '123'
+        assert kwargs['previous_txn'].tx_auth_num == ''
+        assert kwargs['previous_txn'].security_key == 'xx'
+        assert kwargs['amount'] == D('10.00')
+        assert 'description' in kwargs
+
+    def test_defaults_to_previous_amount(self, get):
+        get.return_value = mock.MagicMock(amount=D('1.99'))
+        with mock.patch('oscar_sagepay.gateway.authorise') as authorise:
+            facade.authorise(tx_id='123')
+            kwargs = authorise.call_args[1]
+        assert kwargs['amount'] == D('1.99')
+
+    def test_gateway_error_raises_payment_error(self, get):
+        get.return_value = mock.MagicMock()
+        with mock.patch('oscar_sagepay.gateway.authorise') as authorise:
+            authorise.side_effect = exceptions.GatewayError
+            with pytest.raises(payment_exceptions.PaymentError):
+                facade.authorise(tx_id='123')
+
+    def test_not_ok_response_raises_payment_error(self, get):
+        get.return_value = mock.MagicMock()
+        with mock.patch('oscar_sagepay.gateway.authorise') as authorise:
+            authorise.return_value = mock.MagicMock(is_ok=False)
+            with pytest.raises(payment_exceptions.PaymentError):
+                facade.authorise(tx_id='123')

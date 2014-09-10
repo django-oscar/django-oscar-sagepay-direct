@@ -57,6 +57,10 @@ class Response(object):
     # Predicates
 
     @property
+    def is_ok(self):
+        return self.status == self.OK
+
+    @property
     def is_successful(self):
         return self.status in (self.REGISTERED, self.OK, self.OK_REPEATED)
 
