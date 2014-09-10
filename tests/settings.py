@@ -13,7 +13,8 @@ DATABASES = {
     }
 }
 
-LOGGING = {}
+import logging
+logging.disable(logging.CRITICAL)
 
 INSTALLED_APPS = [
     'django.contrib.auth',
