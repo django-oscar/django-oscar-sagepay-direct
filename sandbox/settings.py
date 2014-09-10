@@ -163,7 +163,7 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
+            'formatter': 'simple'
         },
         'mail_admins': {
             'level': 'ERROR',
@@ -182,6 +182,11 @@ LOGGING = {
             'propagate': False,
         },
         'oscar.checkout': {
+            'handlers': ['console'],
+            'propagate': True,
+            'level': 'INFO',
+        },
+        'oscar.sagepay': {
             'handlers': ['console'],
             'propagate': True,
             'level': 'INFO',

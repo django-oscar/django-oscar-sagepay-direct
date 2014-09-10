@@ -1,11 +1,14 @@
 import httplib
 import collections
 import random
+import logging
 
 import requests
 from oscar.apps.payment import bankcards
 
 from . import models, exceptions, config, wrappers
+
+logger = logging.getLogger('oscar.sagepay')
 
 # TxTypes
 TXTYPE_PAYMENT = 'PAYMENT'
@@ -68,17 +71,28 @@ def _request(url, tx_type, params):
     rr.record_request(request_params)
     rr.save()
 
+    logger.info("Vendor TX code: %s, making %s request to %s",
+                vendor_tx_code, tx_type, url)
     try:
         http_response = requests.post(url, request_params)
     except requests.exceptions.RequestException as e:
+        logger.error("Vendor TX code: %s, HTTP connection error: %s",
+                     vendor_tx_code, e.message)
         raise exceptions.GatewayError(
             "HTTP error: %s" % e.message)
+
     if http_response.status_code != httplib.OK:
         # Sagepay seem to return a status 200 even for bad requests
+        logger.error("Vendor TX code: %s, HTTP response error: %s - %s",
+                     vendor_tx_code, http_response.status_code,
+                     http_response.content)
         raise exceptions.GatewayError(
             "Sagepay server returned a %s response with content %s" % (
                 http_response.status_code, http_response.content))
+
     sp_response = wrappers.Response(vendor_tx_code, http_response.content)
+    logger.info("Vendor TX code: %s, Response status %s - %s",
+                vendor_tx_code, sp_response.status, sp_response.status_detail)
 
     # Update audit model with response info
     rr.record_response(sp_response)
