@@ -84,6 +84,8 @@ class RequestResponse(models.Model):
         for key in sensitive_fields:
             if key in safe_params:
                 safe_params[key] = '<removed>'
+        if 'Amount' in safe_params:
+            safe_params['Amount'] = str(safe_params['Amount'])
         self.raw_request_json = json.dumps(safe_params)
         self.request_datetime = now()
 
