@@ -23,7 +23,7 @@ class Transactions(ListView):
         qs = super(Transactions, self).get_queryset()
         if self.form.is_valid():
             self.query = self.form.cleaned_data['q']
-            filters = (Q(vendor_tx_code__startswith=self.query) |
+            filters = (Q(vendor_tx_code__contains=self.query) |
                        Q(tx_id__contains=self.query))
             qs = qs.filter(filters)
         return qs

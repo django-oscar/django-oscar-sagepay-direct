@@ -9,7 +9,7 @@ from . import gateway, exceptions, models
 
 
 def authenticate(amount, bankcard, shipping_address, billing_address,
-                 description=''):
+                 description='', order_number=None):
     """
     Perform an AUTHENTICATE request and return the TX ID if successful.
     """
@@ -23,6 +23,8 @@ def authenticate(amount, bankcard, shipping_address, billing_address,
         'bankcard_name': bankcard.name,
         'bankcard_expiry': bankcard.expiry_month('%m%y'),
     }
+    if order_number is not None:
+        params['reference'] = order_number
     if shipping_address:
         params.update({
             'delivery_surname': shipping_address.last_name,
@@ -62,7 +64,7 @@ def authenticate(amount, bankcard, shipping_address, billing_address,
     return response.tx_id
 
 
-def authorise(tx_id, amount=None, description=None):
+def authorise(tx_id, amount=None, description=None, order_number=None):
     """
     Perform an AUTHORISE request against a previous transaction
     """
@@ -88,6 +90,8 @@ def authorise(tx_id, amount=None, description=None):
         'amount': amount,
         'description': description,
     }
+    if order_number is not None:
+        params['reference'] = order_number
     try:
         response = gateway.authorise(**params)
     except exceptions.GatewayError as e:
@@ -98,7 +102,7 @@ def authorise(tx_id, amount=None, description=None):
     return response.tx_id
 
 
-def refund(tx_id, amount=None, description=None):
+def refund(tx_id, amount=None, description=None, order_number=None):
     """
     Perform a REFUND request against a previous transaction. The passed tx_id
     should be from the original AUTHENTICATE request.
@@ -139,6 +143,8 @@ def refund(tx_id, amount=None, description=None):
         'currency': authenticate_txn.currency,
         'description': description,
     }
+    if order_number is not None:
+        params['reference'] = order_number
     try:
         response = gateway.refund(**params)
     except exceptions.GatewayError as e:
@@ -149,7 +155,7 @@ def refund(tx_id, amount=None, description=None):
     return response.tx_id
 
 
-def void(tx_id):
+def void(tx_id, order_number=None):
     """
     Cancel an existing transaction
     """
@@ -180,6 +186,8 @@ def void(tx_id):
     params = {
         'previous_txn': previous_txn,
     }
+    if order_number is not None:
+        params['reference'] = order_number
     try:
         response = gateway.void(**params)
     except exceptions.GatewayError as e:

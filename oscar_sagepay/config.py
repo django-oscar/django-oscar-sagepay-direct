@@ -15,4 +15,4 @@ else:
     VPS_AUTHORISE_URL = VPS_REFUND_URL = VPS_REGISTER_URL = VPS_VOID_URL
 
 VENDOR_TX_CODE_PREFIX = getattr(settings, "OSCAR_SAGEOAY_TX_CODE_PREFIX",
-                                "oscar_sagepay_")
+                                "oscar")

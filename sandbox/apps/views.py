@@ -22,7 +22,7 @@ class AuthorisePayment(generic.View):
             'number': order.number})
         response = http.HttpResponseRedirect(url)
         try:
-            new_tx_id = facade.authorise(tx_id)
+            new_tx_id = facade.authorise(tx_id, order_number=order.number)
         except exceptions.PaymentError as e:
             messages.error(
                 request, (
@@ -51,7 +51,7 @@ class RefundPayment(generic.View):
             'number': order.number})
         response = http.HttpResponseRedirect(url)
         try:
-            new_tx_id = facade.refund(tx_id)
+            new_tx_id = facade.refund(tx_id, order_number=order.number)
         except exceptions.PaymentError as e:
             messages.error(
                 request, (
@@ -80,7 +80,7 @@ class VoidPayment(generic.View):
             'number': order.number})
         response = http.HttpResponseRedirect(url)
         try:
-            new_tx_id = facade.void(tx_id)
+            facade.void(tx_id, order_number=order.number)
         except exceptions.PaymentError as e:
             messages.error(
                 request, (
@@ -88,5 +88,5 @@ class VoidPayment(generic.View):
             return response
 
         messages.success(
-            request, "Transaction voided: TX ID %s" % new_tx_id)
+            request, "Transaction voided")
         return response

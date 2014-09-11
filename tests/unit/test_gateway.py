@@ -25,12 +25,9 @@ def stub_sagepay_response(content=responses.MALFORMED, status_code=200):
 
 
 def stub_orm_create():
-    rr = models.RequestResponse(id=1)
-    rr.save = mock.Mock()
     return mock.patch(
-        'oscar_sagepay.models.RequestResponse.objects',
-        new=mock.MagicMock(
-            **{'create.return_value': rr}))
+        'oscar_sagepay.models.RequestResponse',
+        new=mock.MagicMock())
 
 
 @stub_orm_create()
@@ -65,13 +62,11 @@ def test_fields_are_truncated_to_fit_sagepay():
 @stub_sagepay_response()
 def test_audit_model_is_called_with_request_params():
     patch_kwargs = {
-        'target': 'oscar_sagepay.models.RequestResponse.objects.create',
+        'target': 'oscar_sagepay.models.RequestResponse',
     }
-    instance = mock.MagicMock(id=1)
-    with mock.patch(**patch_kwargs) as create:
-        create.return_value = instance
+    with mock.patch(**patch_kwargs) as rr:
         gateway.authenticate(AMT, CURRENCY)
+        call_params = rr.new.call_args[0][0]
 
-    call_params = instance.record_request.call_args[0][0]
     for key in ('VPSProtocol', 'Vendor', 'TxType'):
         assert key in call_params

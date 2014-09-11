@@ -8,11 +8,10 @@ from . import wrappers
 
 class RequestResponse(models.Model):
     # Request fields
-    protocol = models.CharField(max_length=12, blank=True)
-    tx_type = models.CharField(max_length=64, blank=True)
-    vendor = models.CharField(max_length=128, blank=True)
-    vendor_tx_code = models.CharField(max_length=128, db_index=True,
-                                      blank=True)
+    protocol = models.CharField(max_length=12)
+    tx_type = models.CharField(max_length=64)
+    vendor = models.CharField(max_length=128)
+    vendor_tx_code = models.CharField(max_length=128, db_index=True)
 
     amount = models.DecimalField(
         decimal_places=2, max_digits=12, blank=True, null=True)
@@ -41,6 +40,13 @@ class RequestResponse(models.Model):
 
     def __unicode__(self):
         return self.vendor_tx_code
+
+    @classmethod
+    def new(cls, params):
+        instance = cls()
+        instance.record_request(params)
+        instance.save()
+        return instance
 
     @property
     def raw_request(self):

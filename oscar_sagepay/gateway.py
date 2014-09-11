@@ -19,8 +19,7 @@ TXTYPE_REFUND = 'REFUND'
 TXTYPE_VOID = 'VOID'
 
 
-__all__ = ['PreviousTxn', 'payment', 'authenticate', 'authorise', 'cancel',
-           'refund']
+__all__ = ['PreviousTxn', 'authenticate', 'authorise', 'void', 'refund']
 
 
 # Datastructure for wrapping up details of a previous transaction
@@ -49,17 +48,14 @@ def _card_type(bankcard_number):
     return mapping.get(oscar_type, '')
 
 
-def _vendor_tx_code(id):
-    return u'%s%s_%0.6d' % (
-        config.VENDOR_TX_CODE_PREFIX, id,
-        random.randint(0, 1000000))
+def _vendor_tx_code(reference):
+    return u'%s-%s-%0.6d' % (
+        config.VENDOR_TX_CODE_PREFIX,
+        reference, random.randint(0, 1000000))
 
 
-def _request(url, tx_type, params):
-    # Create audit model
-    rr = models.RequestResponse.objects.create()
-
-    vendor_tx_code = _vendor_tx_code(rr.id)
+def _request(url, tx_type, params, reference):
+    vendor_tx_code = _vendor_tx_code(reference)
     request_params = {
         'VPSProtocol': config.VPS_PROTOCOL,
         'Vendor': config.VENDOR,
@@ -68,9 +64,8 @@ def _request(url, tx_type, params):
     }
     request_params.update(params)
 
-    # Update audit model with request info
-    rr.record_request(request_params)
-    rr.save()
+    # Create an audit model with request info
+    rr = models.RequestResponse.new(request_params)
 
     logger.info("Vendor TX code: %s, making %s request to %s",
                 vendor_tx_code, tx_type, url)
@@ -102,15 +97,7 @@ def _request(url, tx_type, params):
     return sp_response
 
 
-def payment(*args, **kwargs):
-    """
-    Authorise a transaction (1 stage payment processing)
-    """
-    params = {}
-    return _request(config.VPS_REGISTER_URL, TXTYPE_AUTHENTICATE, params)
-
-
-def authenticate(amount, currency, **kwargs):
+def authenticate(amount, currency, reference='', **kwargs):
     """
     First part of 2-stage payment processing.
 
@@ -160,10 +147,11 @@ def authenticate(amount, currency, **kwargs):
         'CustomerEMail': kwargs.get('customer_email', ''),
         'Basket': kwargs.get('basket_html', ''),
     }
-    return _request(config.VPS_REGISTER_URL, TXTYPE_AUTHENTICATE, params)
+    return _request(config.VPS_REGISTER_URL, TXTYPE_AUTHENTICATE, params,
+                    reference)
 
 
-def authorise(previous_txn, amount, description, **kwargs):
+def authorise(previous_txn, amount, description, reference='', **kwargs):
     """
     Second step of 2-stage payment processing
 
@@ -181,10 +169,12 @@ def authorise(previous_txn, amount, description, **kwargs):
         'RelatedSecurityKey': previous_txn.security_key,
         'ApplyAVSCV2': kwargs.get('avs_cv2', '0'),
     }
-    return _request(config.VPS_AUTHORISE_URL, TXTYPE_AUTHORISE, params)
+    return _request(config.VPS_AUTHORISE_URL, TXTYPE_AUTHORISE, params,
+                    reference)
 
 
-def refund(previous_txn, amount, currency, description, **kwargs):
+def refund(previous_txn, amount, currency, description, reference='',
+           **kwargs):
     """
     Refund a txn
 
@@ -201,10 +191,10 @@ def refund(previous_txn, amount, currency, description, **kwargs):
         'RelatedTxAuthNo': previous_txn.tx_auth_num,
         'RelatedSecurityKey': previous_txn.security_key,
     }
-    return _request(config.VPS_REFUND_URL, TXTYPE_REFUND, params)
+    return _request(config.VPS_REFUND_URL, TXTYPE_REFUND, params, reference)
 
 
-def void(previous_txn):
+def void(previous_txn, reference=''):
     """
     Cancel an AUTHORISED transaction (before it settles)
 
@@ -217,4 +207,4 @@ def void(previous_txn):
         'TxAuthNo': previous_txn.tx_auth_num,
         'SecurityKey': previous_txn.security_key,
     }
-    return _request(config.VPS_VOID_URL, TXTYPE_VOID, params)
+    return _request(config.VPS_VOID_URL, TXTYPE_VOID, params, reference)

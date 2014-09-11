@@ -1,11 +1,6 @@
 from oscar_sagepay import models
 
 
-def test_audit_model_can_be_created_without_kwargs():
-    instance = models.RequestResponse()
-    instance.full_clean()
-
-
 def test_audit_model_records_key_request_params_as_fields():
     instance = models.RequestResponse()
     params = {
