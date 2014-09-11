@@ -38,3 +38,7 @@ def test_malformed_response_is_not_successful(malformed_response):
 
 def test_registered_response_is_not_successful(registered_response):
     assert registered_response.is_successful
+
+
+def test_registered_response_is_registered(registered_response):
+    assert registered_response.is_registered

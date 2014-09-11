@@ -55,7 +55,7 @@ def authenticate(amount, bankcard, shipping_address=None, billing_address=None,
 
     # Check if the transaction was successful (need to distinguish between
     # customer errors and system errors).
-    if not response.is_successful:
+    if not response.is_registered:
         raise oscar_exceptions.PaymentError(
             response.status_detail)
 
