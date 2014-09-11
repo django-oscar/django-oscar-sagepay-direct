@@ -16,6 +16,7 @@ TXTYPE_DEFERRED = 'DEFERRED'
 TXTYPE_AUTHENTICATE = 'AUTHENTICATE'
 TXTYPE_AUTHORISE = 'AUTHORISE'
 TXTYPE_REFUND = 'REFUND'
+TXTYPE_VOID = 'VOID'
 
 
 __all__ = ['PreviousTxn', 'payment', 'authenticate', 'authorise', 'cancel',
@@ -183,14 +184,6 @@ def authorise(previous_txn, amount, description, **kwargs):
     return _request(config.VPS_AUTHORISE_URL, TXTYPE_AUTHORISE, params)
 
 
-def cancel():
-    """
-    Cancel an existing card authentication
-
-    This happens automatically after 90 days.
-    """
-
-
 def refund(previous_txn, amount, currency, description, **kwargs):
     """
     Refund a txn
@@ -209,3 +202,19 @@ def refund(previous_txn, amount, currency, description, **kwargs):
         'RelatedSecurityKey': previous_txn.security_key,
     }
     return _request(config.VPS_REFUND_URL, TXTYPE_REFUND, params)
+
+
+def void(previous_txn):
+    """
+    Cancel an AUTHORISED transaction (before it settles)
+
+    This can only be done before the end of the day that the AUTHORISE request
+    takes place. After that, a REFUND is required.
+    """
+    params = {
+        'VPSTxId': previous_txn.tx_id,
+        'VendorTxCode': previous_txn.vendor_tx_code,
+        'TxAuthNo': previous_txn.tx_auth_num,
+        'SecurityKey': previous_txn.security_key,
+    }
+    return _request(config.VPS_VOID_URL, TXTYPE_VOID, params)

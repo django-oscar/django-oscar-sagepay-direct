@@ -147,3 +147,44 @@ def refund(tx_id, amount=None, description=None):
         raise oscar_exceptions.PaymentError(
             response.status_detail)
     return response.tx_id
+
+
+def void(tx_id):
+    """
+    Cancel an existing transaction
+    """
+    # Fetch the AUTHENTICATE txn
+    try:
+        authenticate_txn = models.RequestResponse.objects.get(
+            tx_id=tx_id, tx_type=gateway.TXTYPE_AUTHENTICATE)
+    except models.RequestResponse.DoesNotExist:
+        raise oscar_exceptions.PaymentError(
+            "No AUTHENTICATE transaction found with ID %s" % tx_id)
+
+    # Fetch the related (successful) AUTHORISE txn
+    try:
+        authorise_txn = models.RequestResponse.objects.get(
+            related_tx_id=authenticate_txn.tx_id,
+            tx_type=gateway.TXTYPE_AUTHORISE, status='OK'
+        )
+    except models.RequestResponse.DoesNotExist:
+        raise oscar_exceptions.PaymentError((
+            "No successful authorise transaction found for the "
+            "AUTHENTICATE transaction with ID %s") % tx_id)
+
+    previous_txn = gateway.PreviousTxn(
+        vendor_tx_code=authorise_txn.vendor_tx_code,
+        tx_id=authorise_txn.tx_id,
+        tx_auth_num=authorise_txn.tx_auth_num,
+        security_key=authorise_txn.security_key)
+    params = {
+        'previous_txn': previous_txn,
+    }
+    try:
+        response = gateway.void(**params)
+    except exceptions.GatewayError as e:
+        raise oscar_exceptions.PaymentError(e.message)
+    if not response.is_ok:
+        raise oscar_exceptions.PaymentError(
+            response.status_detail)
+    return response.tx_id

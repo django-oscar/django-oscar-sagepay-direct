@@ -18,6 +18,10 @@
             {% csrf_token %}
             <button type="submit" class="btn btn-danger">Refund payment</button>
         </form>
+        <form action="{% url 'sagepay-void' number=order.number %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Void transaction</button>
+        </form>
     </div>
     {{ block.super }}
 {% endblock %}

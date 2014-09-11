@@ -25,6 +25,8 @@ urlpatterns += i18n_patterns(
         views.AuthorisePayment.as_view(), name='sagepay-authorise'),
     url(r'^dashboard/orders/(?P<number>[-\w]+)/refund/',
         views.RefundPayment.as_view(), name='sagepay-refund'),
+    url(r'^dashboard/orders/(?P<number>[-\w]+)/void/',
+        views.VoidPayment.as_view(), name='sagepay-void'),
 
     (r'', include(application.urls)),
 )
