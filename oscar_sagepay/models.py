@@ -11,10 +11,7 @@ class RequestResponse(models.Model):
     protocol = models.CharField(max_length=12, blank=True)
     tx_type = models.CharField(max_length=64, blank=True)
     vendor = models.CharField(max_length=128, blank=True)
-
-    # We allow this unique field to be null so a blank instance can be created
-    # to provide a PK that forms part of the vendor tx code.
-    vendor_tx_code = models.CharField(max_length=128, unique=True, null=True,
+    vendor_tx_code = models.CharField(max_length=128, db_index=True,
                                       blank=True)
 
     amount = models.DecimalField(
@@ -28,7 +25,8 @@ class RequestResponse(models.Model):
     # Response fields
     status = models.CharField(max_length=128, blank=True)
     status_detail = models.TextField(blank=True)
-    tx_id = models.CharField(max_length=128, blank=True)
+    tx_id = models.CharField(
+        max_length=128, db_index=True, blank=True)
     tx_auth_num = models.CharField(max_length=32, blank=True)
     security_key = models.CharField(max_length=128, blank=True)
 
@@ -36,7 +34,7 @@ class RequestResponse(models.Model):
     response_datetime = models.DateTimeField(null=True, blank=True)
 
     related_tx_id = models.CharField(max_length=128, blank=True,
-                                      db_index=True)
+                                     db_index=True)
 
     class Meta:
         ordering = ('-request_datetime',)
