@@ -1,3 +1,6 @@
+import collections
+
+
 class Response(object):
     """
     Response object wrapping providing easy access to the returned parameters
@@ -71,3 +74,8 @@ class Response(object):
     @property
     def is_error(self):
         return not self.is_successful and not self.is_registered
+
+
+class EmptyResponse:
+    is_error = True
+    is_successful = False

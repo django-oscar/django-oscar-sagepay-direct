@@ -64,7 +64,7 @@ class RequestResponse(models.Model):
         self.tx_type = params['TxType']
         self.vendor = params['Vendor']
         self.vendor_tx_code = params['VendorTxCode']
-        self.amount = params['Amount']
+        self.amount = params.get('Amount', None)
         self.currency = params.get('Currency', '')
         self.description = params.get('Description', '')
 
@@ -97,7 +97,12 @@ class RequestResponse(models.Model):
 
     @property
     def response(self):
-        return wrappers.Response(self.vendor_tx_code, self.raw_response)
+        try:
+            response = wrappers.Response(
+                self.vendor_tx_code, self.raw_response)
+        except Exception:
+            response = wrappers.EmptyResponse
+        return response
 
     @property
     def is_error(self):
