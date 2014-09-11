@@ -21,5 +21,10 @@ Run tests with:
 
    (sagepay) $ py.test 
 
-To run end-to-end tests, request a Sagepay Simulator account and configure it to
-not response randomly to DIRECT requests.
+To run end-to-end tests, you'll need a test account with Sagepay configured to respond
+to your IP address and to not response randomly to DIRECT requests (as is the
+default). Set your vendor name in ``sandbox/private_settings.py`` and run:
+
+.. code-block:: bash
+
+   (sagepay) $ py.test --external 
