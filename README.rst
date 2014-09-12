@@ -23,7 +23,7 @@ or:
 
 Add ``oscar_sagepay`` to ``INSTALLED_APPS`` and specify your vendor name:
 
-.. code-block:: bash
+.. code-block:: python
 
    OSCAR_SAGEPAY_VENDOR = 'tangentlabs'
 
@@ -38,7 +38,7 @@ Authenticate
 
 Perform an 'AUTHENTICATE' request:
 
-.. code-block:: bash
+.. code-block:: python
 
    from decimal import Decimal as D
    from oscar_sagepay import facade
@@ -63,7 +63,7 @@ Authorise
 
 Perform an 'AUTHORISE' request:
 
-.. code-block:: bash
+.. code-block:: python
 
    from decimal import Decimal as D
    from oscar_sagepay import facade
@@ -82,7 +82,7 @@ Refund
 
 Perform a 'REFUND' request against a previous 'AUTHORISE':
 
-.. code-block:: bash
+.. code-block:: python
 
    from decimal import Decimal as D
    from oscar_sagepay import facade
@@ -101,7 +101,7 @@ Void
 
 Perform a 'VOID' request against a previous 'AUTHORISE':
 
-.. code-block:: bash
+.. code-block:: python
 
    from decimal import Decimal as D
    from oscar_sagepay import facade
