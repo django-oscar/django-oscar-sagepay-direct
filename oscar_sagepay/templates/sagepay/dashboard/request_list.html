@@ -59,6 +59,7 @@
             <thead>
                 <tr>
                     <th>{% trans "Vendor TX code" %}</th>
+                    <th>{% trans "Reference" %}</th>
                     <th>{% trans "TX type" %}</th>
                     <th>{% trans "Amount" %}</th>
                     <th>{% trans "Description" %}</th>
@@ -74,6 +75,7 @@
             {% for txn in transactions %}
             <tr class="{% if txn.is_successful %}success{% elif txn.is_error %}error{% else %}info{% endif %}">
                 <td><a href="{% url 'sagepay-transaction-detail' txn.pk %}">{{ txn.vendor_tx_code }}</a></td>
+                <td>{{ txn.reference|default:"-" }}</td>
                 <td>{{ txn.tx_type }}</td>
                 <td>{{ txn.amount|currency:txn.currency }}</td>
                 <td>{{ txn.description|default:"-" }}</td>

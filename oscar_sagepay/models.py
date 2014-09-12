@@ -7,6 +7,10 @@ from . import wrappers
 
 
 class RequestResponse(models.Model):
+    # This is normally the order number
+    reference = models.CharField(
+        max_length=128, db_index=True, blank=True)
+
     # Request fields
     protocol = models.CharField(max_length=12)
     tx_type = models.CharField(max_length=64)
@@ -42,8 +46,8 @@ class RequestResponse(models.Model):
         return self.vendor_tx_code
 
     @classmethod
-    def new(cls, params):
-        instance = cls()
+    def new(cls, reference, params):
+        instance = cls(reference=reference)
         instance.record_request(params)
         instance.save()
         return instance

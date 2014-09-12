@@ -77,7 +77,8 @@ class PaymentDetailsView(OscarPaymentDetailsView):
                        billing_address_form, shipping_address, **kwargs):
         tx_id = facade.authenticate(
             order_number=order_number,
-            amount=total, bankcard=bankcard_form.bankcard,
+            amount=total.incl_tax, currency=total.currency,
+            bankcard=bankcard_form.bankcard,
             shipping_address=shipping_address,
             billing_address=billing_address_form.save(commit=False))
 

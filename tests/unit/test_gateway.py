@@ -65,8 +65,9 @@ def test_audit_model_is_called_with_request_params():
         'target': 'oscar_sagepay.models.RequestResponse',
     }
     with mock.patch(**patch_kwargs) as rr:
-        gateway.authenticate(AMT, CURRENCY)
-        call_params = rr.new.call_args[0][0]
+        gateway.authenticate(AMT, CURRENCY, reference='x')
+        ref, call_params = rr.new.call_args[0]
 
+    assert ref == 'x'
     for key in ('VPSProtocol', 'Vendor', 'TxType'):
         assert key in call_params

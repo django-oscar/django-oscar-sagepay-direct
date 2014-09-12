@@ -2,17 +2,17 @@ from django.views import generic
 from django import shortcuts, http
 from django.core.urlresolvers import reverse
 from django.contrib import messages
-from oscar.apps.order import models
+from oscar.apps.order import models as order_models
 from oscar.apps.payment import exceptions
 
-from oscar_sagepay import facade
+from oscar_sagepay import facade, models, gateway
 
 
 class AuthorisePayment(generic.View):
 
     def post(self, request, number):
         order = shortcuts.get_object_or_404(
-            models.Order, number=number)
+            order_models.Order, number=number)
 
         # Grab Sagepay TX ID (in a hacky way)
         source = order.sources.all()[0]
@@ -41,17 +41,19 @@ class RefundPayment(generic.View):
 
     def post(self, request, number):
         order = shortcuts.get_object_or_404(
-            models.Order, number=number)
+            order_models.Order, number=number)
 
-        # Grab Sagepay TX ID (in a hacky way)
-        source = order.sources.all()[0]
-        tx_id = source.reference
+        # Grab first AUTHORISE txn to refund
+        txns = models.RequestResponse.objects.filter(
+            reference=order.number, tx_type=gateway.TXTYPE_AUTHORISE,
+            status='OK')
+        txn = txns[0]
 
         url = reverse('dashboard:order-detail', kwargs={
             'number': order.number})
         response = http.HttpResponseRedirect(url)
         try:
-            new_tx_id = facade.refund(tx_id, order_number=order.number)
+            new_tx_id = facade.refund(txn.tx_id, order_number=order.number)
         except exceptions.PaymentError as e:
             messages.error(
                 request, (
@@ -59,6 +61,7 @@ class RefundPayment(generic.View):
             return response
 
         # Update payment source
+        source = order.sources.all()[0]
         source.refund(source.amount_debited, reference=new_tx_id)
 
         messages.success(
@@ -70,17 +73,18 @@ class VoidPayment(generic.View):
 
     def post(self, request, number):
         order = shortcuts.get_object_or_404(
-            models.Order, number=number)
+            order_models.Order, number=number)
 
-        # Grab Sagepay TX ID for the original AUTHENTICATE txn
-        source = order.sources.all()[0]
-        tx_id = source.reference
+        txns = models.RequestResponse.objects.filter(
+            reference=order.number, tx_type=gateway.TXTYPE_AUTHORISE,
+            status='OK')
+        txn = txns[0]
 
         url = reverse('dashboard:order-detail', kwargs={
             'number': order.number})
         response = http.HttpResponseRedirect(url)
         try:
-            facade.void(tx_id, order_number=order.number)
+            facade.void(txn.tx_id, order_number=order.number)
         except exceptions.PaymentError as e:
             messages.error(
                 request, (

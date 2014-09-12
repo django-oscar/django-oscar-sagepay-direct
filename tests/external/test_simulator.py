@@ -11,7 +11,8 @@ from tests import factories
 BANKCARD = payment_models.Bankcard(
     name='Barry Chuckle', number='4111111111111111',
     expiry_date=datetime.date.today(), ccv='123')
-AMT = prices.Price('GBP', D('10.00'), D('10.00'))
+AMT = D('10.00')
+CURRENCY = 'GBP'
 SHIPPING_ADDRESS = factories.ShippingAddress()
 BILLING_ADDRESS = factories.BillingAddress()
 
@@ -20,10 +21,13 @@ BILLING_ADDRESS = factories.BillingAddress()
 def test_multiple_transactions():
     # Authenticate transaction
     authenticate_tx_id = facade.authenticate(
-        AMT, BANKCARD, SHIPPING_ADDRESS, BILLING_ADDRESS)
+        AMT, CURRENCY, BANKCARD, SHIPPING_ADDRESS, BILLING_ADDRESS)
 
     # Authorise (in two parts)
-    auth_tx_id1 = facade.authorise(
+    facade.authorise(
         tx_id=authenticate_tx_id, amount=D('8.00'))
-    auth_tx_id2 = facade.authorise(
+    auth_tx_id = facade.authorise(
         tx_id=authenticate_tx_id, amount=D('2.00'))
+
+    # Refund last authorise
+    facade.refund(auth_tx_id)

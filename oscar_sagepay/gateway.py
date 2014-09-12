@@ -65,7 +65,7 @@ def _request(url, tx_type, params, reference):
     request_params.update(params)
 
     # Create an audit model with request info
-    rr = models.RequestResponse.new(request_params)
+    rr = models.RequestResponse.new(reference, request_params)
 
     logger.info("Vendor TX code: %s, making %s request to %s",
                 vendor_tx_code, tx_type, url)
@@ -151,7 +151,8 @@ def authenticate(amount, currency, reference='', **kwargs):
                     reference)
 
 
-def authorise(previous_txn, amount, description, reference='', **kwargs):
+def authorise(previous_txn, amount, currency, description,
+              reference='', **kwargs):
     """
     Second step of 2-stage payment processing
 
@@ -162,6 +163,7 @@ def authorise(previous_txn, amount, description, reference='', **kwargs):
     """
     params = {
         'Amount': str(amount),
+        'Currency': currency,
         'Description': description,
         'RelatedVPSTxId': previous_txn.tx_id,
         'RelatedVendorTxCode': previous_txn.vendor_tx_code,

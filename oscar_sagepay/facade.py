@@ -8,15 +8,15 @@ from oscar.apps.payment import exceptions as oscar_exceptions
 from . import gateway, exceptions, models
 
 
-def authenticate(amount, bankcard, shipping_address, billing_address,
+def authenticate(amount, currency, bankcard, shipping_address, billing_address,
                  description='', order_number=None):
     """
     Perform an AUTHENTICATE request and return the TX ID if successful.
     """
     # Decompose Oscar objects into a dict of data to pass to gateway
     params = {
-        'amount': amount.incl_tax,
-        'currency': amount.currency,
+        'amount': amount,
+        'currency': currency,
         'description': description,
         'bankcard_number': bankcard.number,
         'bankcard_cv2': bankcard.ccv,
@@ -88,6 +88,7 @@ def authorise(tx_id, amount=None, description=None, order_number=None):
     params = {
         'previous_txn': previous_txn,
         'amount': amount,
+        'currency': txn.currency,
         'description': description,
     }
     if order_number is not None:
@@ -105,42 +106,30 @@ def authorise(tx_id, amount=None, description=None, order_number=None):
 def refund(tx_id, amount=None, description=None, order_number=None):
     """
     Perform a REFUND request against a previous transaction. The passed tx_id
-    should be from the original AUTHENTICATE request.
+    should be from the AUTHORISE request that you want to refund against.
     """
-    # Fetch the AUTHENTICATE txn
-    try:
-        authenticate_txn = models.RequestResponse.objects.get(
-            tx_id=tx_id, tx_type=gateway.TXTYPE_AUTHENTICATE)
-    except models.RequestResponse.DoesNotExist:
-        raise oscar_exceptions.PaymentError(
-            "No historic transaction found with ID %s" % tx_id)
-
-    # Fetch the related (successful) AUTHORISE txn
     try:
         authorise_txn = models.RequestResponse.objects.get(
-            related_tx_id=authenticate_txn.tx_id,
-            tx_type=gateway.TXTYPE_AUTHORISE, status='OK'
+            tx_id=tx_id, tx_type=gateway.TXTYPE_AUTHORISE, status='OK'
         )
     except models.RequestResponse.DoesNotExist:
         raise oscar_exceptions.PaymentError((
-            "No successful authorise transaction found for the "
-            "AUTHENTICATE transaction with ID %s") % tx_id)
+            "No successful AUTHORISE transaction found with "
+            "ID %s") % tx_id)
 
-    # Contrary to the docs, we provide the details of the AUTHORISE request and
-    # don't include anything from the AUTHENTICATE one.
     previous_txn = gateway.PreviousTxn(
         vendor_tx_code=authorise_txn.vendor_tx_code,
         tx_id=authorise_txn.tx_id,
         tx_auth_num=authorise_txn.tx_auth_num,
         security_key=authorise_txn.security_key)
     if amount is None:
-        amount = authenticate_txn.amount
+        amount = authorise_txn.amount
     if description is None:
         description = "Refund TX ID %s" % tx_id
     params = {
         'previous_txn': previous_txn,
         'amount': amount,
-        'currency': authenticate_txn.currency,
+        'currency': authorise_txn.currency,
         'description': description,
     }
     if order_number is not None:
@@ -159,24 +148,14 @@ def void(tx_id, order_number=None):
     """
     Cancel an existing transaction
     """
-    # Fetch the AUTHENTICATE txn
-    try:
-        authenticate_txn = models.RequestResponse.objects.get(
-            tx_id=tx_id, tx_type=gateway.TXTYPE_AUTHENTICATE)
-    except models.RequestResponse.DoesNotExist:
-        raise oscar_exceptions.PaymentError(
-            "No AUTHENTICATE transaction found with ID %s" % tx_id)
-
-    # Fetch the related (successful) AUTHORISE txn
     try:
         authorise_txn = models.RequestResponse.objects.get(
-            related_tx_id=authenticate_txn.tx_id,
-            tx_type=gateway.TXTYPE_AUTHORISE, status='OK'
+            tx_id=tx_id, tx_type=gateway.TXTYPE_AUTHORISE, status='OK'
         )
     except models.RequestResponse.DoesNotExist:
         raise oscar_exceptions.PaymentError((
-            "No successful authorise transaction found for the "
-            "AUTHENTICATE transaction with ID %s") % tx_id)
+            "No successful AUTHORISE transaction found with "
+            "ID %s") % tx_id)
 
     previous_txn = gateway.PreviousTxn(
         vendor_tx_code=authorise_txn.vendor_tx_code,
