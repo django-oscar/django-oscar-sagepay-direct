@@ -14,5 +14,5 @@ else:
     VPS_REGISTER_URL = 'https://live.sagepay.com/gateway/service/vspdirect-register.vsp'
     VPS_AUTHORISE_URL = VPS_REFUND_URL = VPS_REGISTER_URL = VPS_VOID_URL
 
-VENDOR_TX_CODE_PREFIX = getattr(settings, "OSCAR_SAGEOAY_TX_CODE_PREFIX",
+VENDOR_TX_CODE_PREFIX = getattr(settings, "OSCAR_SAGEPAY_TX_CODE_PREFIX",
                                 "oscar")
