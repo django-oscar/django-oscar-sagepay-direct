@@ -9,7 +9,7 @@ from . import gateway, exceptions, models
 
 
 def authenticate(amount, currency, bankcard, shipping_address, billing_address,
-                 description='', order_number=None):
+                 description, order_number=None):
     """
     Perform an AUTHENTICATE request and return the TX ID if successful.
     """
