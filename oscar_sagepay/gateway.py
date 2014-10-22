@@ -118,6 +118,9 @@ def authenticate(amount, currency, reference='', **kwargs):
         'CardType': _card_type(bankcard_number),
         'CardNumber': bankcard_number,
         'CV2': kwargs.get('bankcard_ccv', ''),
+        # Required field, that is not documented, if not set it the request
+        # returns the error: '5017 : The Security Code(CV2) is required.'
+        'ApplyAVSCV2': '2',
         'CardHolder': kwargs.get('bankcard_name', ''),
         'ExpiryDate': kwargs.get('bankcard_expiry', ''),
         # BILLING DETAILS
