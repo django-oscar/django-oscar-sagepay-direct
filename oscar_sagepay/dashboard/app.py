@@ -2,8 +2,12 @@ from django.conf.urls import patterns, url
 from django.contrib.admin.views.decorators import staff_member_required
 
 from oscar.core.application import Application
+from oscar.apps.dashboard.nav import register, Node
 
 from . import views
+
+node = Node('Datacash', 'sagepay-transaction-list')
+register(node, 100)
 
 
 class SagepayDashboard(Application):
