@@ -1,2 +1,3 @@
 sandbox/public/
 sandbox/private_settings.py
+.tox

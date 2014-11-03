@@ -16,6 +16,7 @@ setup(
     platforms=['linux'],
     packages=find_packages(exclude=['sandbox*', 'tests*']),
     include_package_data=True,
+    test_suite="tests",
     install_requires=[
         'requests>=1.0',
     ],

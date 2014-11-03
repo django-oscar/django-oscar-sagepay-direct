@@ -3,7 +3,6 @@ import datetime
 
 import pytest
 from oscar.apps.payment import models as payment_models
-from oscar.core import prices
 
 from oscar_sagepay import facade
 from tests import factories

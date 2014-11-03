@@ -3,7 +3,6 @@ from decimal import Decimal as D
 
 from oscar.apps.payment import (
     models as payment_models, exceptions as payment_exceptions)
-from oscar.core import prices
 import mock
 import pytest
 

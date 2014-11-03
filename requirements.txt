@@ -1,6 +1,5 @@
-django-oscar==0.7.2
-
 # Testing
+pytest==2.5.2
 pytest-django==2.6.2
 pytest-cov==1.7.0
 pytest-sugar==0.3.4

@@ -1,5 +1,6 @@
 install:
 	pip install -r requirements.txt
+	pip install "django-oscar==0.7.2"
 	python setup.py develop
 
 sandbox: install
