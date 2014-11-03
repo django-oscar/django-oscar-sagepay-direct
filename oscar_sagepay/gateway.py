@@ -124,7 +124,7 @@ def authenticate(amount, currency, reference='', **kwargs):
         'CV2': kwargs.get('bankcard_ccv', ''),
         # Required field, that is not documented, if not set it the request
         # returns the error: '5017 : The Security Code(CV2) is required.'
-        'ApplyAVSCV2': '2',
+        'ApplyAVSCV2': kwargs.get('avscv2', '2'),
         'CardHolder': kwargs.get('bankcard_name', ''),
         'ExpiryDate': kwargs.get('bankcard_expiry', ''),
         # BILLING DETAILS
@@ -176,7 +176,7 @@ def authorise(previous_txn, amount, currency, description,
         'RelatedVendorTxCode': previous_txn.vendor_tx_code,
         'RelatedTxAuthNo': previous_txn.tx_auth_num,
         'RelatedSecurityKey': previous_txn.security_key,
-        'ApplyAVSCV2': kwargs.get('avs_cv2', '0'),
+        'ApplyAVSCV2': config.AVSCV2,
     }
     return _request(config.VPS_AUTHORISE_URL, TXTYPE_AUTHORISE, params,
                     reference)

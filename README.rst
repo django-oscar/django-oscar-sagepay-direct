@@ -136,6 +136,8 @@ These settings are available:
   test Sagepay servers.
 - ``OSCAR_SAGEPAY_TX_CODE_PREFIX`` (default: ``oscar``) - a prefix string to
   prepend to generated TX codes
+- ``OSCAR_SAGEPAY_AVSCV2`` (default: ``2``) - the Sagepay setting for AV2CV2
+  behaviour.
 
 Contributing
 ------------

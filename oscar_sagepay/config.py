@@ -18,3 +18,5 @@ else:
 
 VENDOR_TX_CODE_PREFIX = getattr(settings, "OSCAR_SAGEPAY_TX_CODE_PREFIX",
                                 "oscar")
+
+AVSCV2 = getattr(settings, "OSCAR_SAGEPAY_AVSCV2", "2")
