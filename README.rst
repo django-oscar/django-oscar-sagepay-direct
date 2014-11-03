@@ -6,6 +6,11 @@ This package provides integration between django-oscar and Sagepay's Direct
 APIs.  It is still in the early stage of development - please ask any questions
 using the Oscar mailing list:  django-oscar@googlegroups.com.
 
+Continuous integration status:
+
+.. image:: https://secure.travis-ci.org/django-oscar/django-oscar-sagepay-direct.png?branch=master
+    :target: http://travis-ci.org/#!/django-oscar/django-oscar-sagepay-direct
+
 Installation
 ------------
 
