@@ -9,10 +9,14 @@ from . import gateway, exceptions, models
 
 
 def authenticate(amount, currency, bankcard, shipping_address, billing_address,
-                 description, order_number=None):
+                 description=None, order_number=None):
     """
     Perform an AUTHENTICATE request and return the TX ID if successful.
     """
+    # Requests require a non-empty description
+    if description is None:
+        description = "<no description>"
+
     # Decompose Oscar objects into a dict of data to pass to gateway
     params = {
         'amount': amount,
