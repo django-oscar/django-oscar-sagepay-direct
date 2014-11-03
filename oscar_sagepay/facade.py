@@ -8,6 +8,43 @@ from oscar.apps.payment import exceptions as oscar_exceptions
 from . import gateway, exceptions, models
 
 
+def _get_bankcard_params(bankcard):
+    """
+    Extract the bankcard details from the bankcard obejct, and create a params
+    dictionary
+    """
+    if hasattr(bankcard, 'number'):
+        bankcard_number = bankcard.number
+    else:
+        bankcard_number = bankcard.card_number
+    if hasattr(bankcard, 'name'):
+        card_holder_name = bankcard.name
+    else:
+        card_holder_name = bankcard.card_holder_name
+    if hasattr(bankcard, 'expiry_month'):
+        bankcard_expiry = bankcard.expiry_month('%m%y')
+    else:
+        bankcard_expiry = bankcard.expiry_date.replace('/', '')
+
+    params = {
+        'bankcard_number': bankcard_number,
+        'bankcard_cv2': bankcard.ccv,
+        'bankcard_name': card_holder_name,
+        'bankcard_expiry': bankcard_expiry,
+    }
+
+    return params
+
+
+def _get_country_code(country):
+    if hasattr(country, 'code'):
+        country_code = country.code
+    else:
+        country_code = country.iso_3166_1_a2
+
+    return country_code
+
+
 def authenticate(amount, currency, bankcard, shipping_address, billing_address,
                  description=None, order_number=None):
     """
@@ -22,11 +59,10 @@ def authenticate(amount, currency, bankcard, shipping_address, billing_address,
         'amount': amount,
         'currency': currency,
         'description': description,
-        'bankcard_number': bankcard.number,
-        'bankcard_cv2': bankcard.ccv,
-        'bankcard_name': bankcard.name,
-        'bankcard_expiry': bankcard.expiry_month('%m%y'),
     }
+
+    params.update(_get_bankcard_params(bankcard))
+
     if order_number is not None:
         params['reference'] = order_number
     if shipping_address:
@@ -37,7 +73,7 @@ def authenticate(amount, currency, bankcard, shipping_address, billing_address,
             'delivery_address2': shipping_address.line2,
             'delivery_city': shipping_address.line4,
             'delivery_postcode': shipping_address.postcode,
-            'delivery_country': shipping_address.country.code,
+            'delivery_country': _get_country_code(shipping_address.country),
             'delivery_state': shipping_address.state,
             'delivery_phone': shipping_address.phone_number,
         })
@@ -49,7 +85,7 @@ def authenticate(amount, currency, bankcard, shipping_address, billing_address,
             'billing_address2': billing_address.line2,
             'billing_city': billing_address.line4,
             'billing_postcode': billing_address.postcode,
-            'billing_country': billing_address.country.code,
+            'billing_country': _get_country_code(billing_address.country),
             'billing_state': billing_address.state,
         })
 

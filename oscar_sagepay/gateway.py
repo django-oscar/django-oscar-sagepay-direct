@@ -4,7 +4,11 @@ import random
 import logging
 
 import requests
-from oscar.apps.payment import bankcards
+# Oscar 0.4 doesn't have the bankcards module
+try:
+    from oscar.apps.payment import bankcards
+except ImportError:
+    from . import bankcards
 
 from . import models, exceptions, config, wrappers
 
