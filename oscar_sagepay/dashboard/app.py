@@ -2,12 +2,16 @@ from django.conf.urls import patterns, url
 from django.contrib.admin.views.decorators import staff_member_required
 
 from oscar.core.application import Application
-from oscar.apps.dashboard.nav import register, Node
-
 from . import views
 
-node = Node('Datacash', 'sagepay-transaction-list')
-register(node, 100)
+try:
+    from oscar.apps.dashboard.nav import register, Node
+except ImportError:
+    pass
+else:
+    # Old way of registering Dashboard nodes
+    node = Node('Datacash', 'sagepay-transaction-list')
+    register(node, 100)
 
 
 class SagepayDashboard(Application):
