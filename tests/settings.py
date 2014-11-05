@@ -31,6 +31,8 @@ INSTALLED_APPS = [
 from oscar import get_core_apps
 INSTALLED_APPS = INSTALLED_APPS + get_core_apps()
 
+OSCAR_SAGEPAY_VENDOR = 'dummy'
+
 from oscar.defaults import *  # noqa
 
 # Import private settings used for external tests
