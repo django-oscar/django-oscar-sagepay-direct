@@ -2,6 +2,7 @@ import httplib
 import collections
 import random
 import logging
+import re
 
 import requests
 # Oscar 0.4 doesn't have the bankcards module
@@ -101,6 +102,39 @@ def _request(url, tx_type, params, reference):
     return sp_response
 
 
+def clean_name(input):
+    """
+    Clean a name string according to Sagepay's validation rules
+    """
+    invalid = re.compile(r"[^\w &-.',0-9]", re.UNICODE)
+    return re.sub(invalid, '', input)
+
+
+def clean_address(input):
+    """
+    Clean an address string according to Sagepay's validation rules
+    """
+    # We strip newlines even though they are permitted
+    invalid = re.compile(r"[^\w &-.',0-9]", re.UNICODE)
+    return re.sub(invalid, '', input)
+
+
+def clean_postcode(input):
+    """
+    Clean an postcode string according to Sagepay's validation rules
+    """
+    invalid = re.compile(r"[^-\w 0-9]")
+    return re.sub(invalid, '', input)
+
+
+def clean_phone(input):
+    """
+    Clean a phone string according to Sagepay's validation rules
+    """
+    invalid = re.compile(r"[^0-9-A-Z+ ()]")
+    return re.sub(invalid, '', input)
+
+
 def authenticate(amount, currency, reference='', **kwargs):
     """
     First part of 2-stage payment processing.
@@ -128,25 +162,26 @@ def authenticate(amount, currency, reference='', **kwargs):
         'CardHolder': kwargs.get('bankcard_name', ''),
         'ExpiryDate': kwargs.get('bankcard_expiry', ''),
         # BILLING DETAILS
-        'BillingSurname': kwargs.get('billing_surname', '')[:20],
-        'BillingFirstnames': kwargs.get('billing_first_names', '')[:20],
-        'BillingAddress1': kwargs.get('billing_address1', '')[:100],
-        'BillingAddress2': kwargs.get('billing_address2', '')[:100],
-        'BillingCity': kwargs.get('billing_city', '')[:40],
-        'BillingPostCode': kwargs.get('billing_postcode', '')[:10],
+        'BillingSurname': clean_name(kwargs.get('billing_surname', ''))[:20],
+        'BillingFirstnames': clean_name(kwargs.get('billing_first_names', ''))[:20],
+        'BillingAddress1': clean_address(kwargs.get('billing_address1', ''))[:100],
+        'BillingAddress2': clean_address(kwargs.get('billing_address2', ''))[:100],
+        'BillingCity': clean_address(kwargs.get('billing_city', ''))[:40],
+        'BillingPostCode': clean_postcode(kwargs.get('billing_postcode', ''))[:10],
         'BillingCountry': kwargs.get('billing_country', '')[:2],
         'BillingState': kwargs.get('billing_state', '')[:2],
-        'BillingPhone': kwargs.get('billing_phone', '')[:20],
+        'BillingPhone': clean_phone(kwargs.get('billing_phone', ''))[:20],
         # DELIVERY DETAILS
-        'DeliverySurname': kwargs.get('delivery_surname', '')[:20],
-        'DeliveryFirstnames': kwargs.get('delivery_first_names', '')[:20],
-        'DeliveryAddress1': kwargs.get('delivery_address1', '')[:100],
-        'DeliveryAddress2': kwargs.get('delivery_address2', '')[:100],
-        'DeliveryCity': kwargs.get('delivery_city', '')[:40],
-        'DeliveryPostCode': kwargs.get('delivery_postcode', '')[:10],
+        'DeliverySurname': clean_name(kwargs.get('delivery_surname', ''))[:20],
+        'DeliveryFirstnames': clean_name(kwargs.get(
+            'delivery_first_names', ''))[:20],
+        'DeliveryAddress1': clean_address(kwargs.get('delivery_address1', ''))[:100],
+        'DeliveryAddress2': clean_address(kwargs.get('delivery_address2', ''))[:100],
+        'DeliveryCity': clean_address(kwargs.get('delivery_city', ''))[:40],
+        'DeliveryPostCode': clean_postcode(kwargs.get('delivery_postcode', ''))[:10],
         'DeliveryCountry': kwargs.get('delivery_country', '')[:2],
         'DeliveryState': kwargs.get('delivery_state', '')[:2],
-        'DeliveryPhone': kwargs.get('delivery_phone', '')[:20],
+        'DeliveryPhone': clean_phone(kwargs.get('delivery_phone', ''))[:20],
         # TOKENS
         'CreateToken': kwargs.get('create_token', 0),
         'StoreToken': kwargs.get('create_token', 0),
@@ -154,6 +189,13 @@ def authenticate(amount, currency, reference='', **kwargs):
         'CustomerEMail': kwargs.get('customer_email', ''),
         'Basket': kwargs.get('basket_html', ''),
     }
+
+    # Only submit state information for US
+    if params['BillingCountry'].upper() != 'US':
+        params['BillingState'] = ''
+    if params['DeliveryCountry'].upper() != 'US':
+        params['DeliveryState'] = ''
+
     return _request(config.VPS_REGISTER_URL, TXTYPE_AUTHENTICATE, params,
                     reference)
 

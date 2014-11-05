@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from decimal import Decimal as D
 import datetime
 
@@ -59,6 +60,28 @@ def test_fields_are_truncated_to_fit_sagepay():
         assert len(args[1]['DeliveryCity']) == 40
 
 
+@stub_orm_create()
+def test_fields_are_cleaned_to_match_sagepay_formats():
+    with mock.patch('requests.post') as post:
+        post.return_value = mock.MagicMock(status_code=200)
+        gateway.authenticate(
+            AMT, CURRENCY, delivery_surname="Name?"
+        )
+        args, __ = post.call_args
+        assert args[1]['DeliverySurname'] == "Name"
+
+
+@stub_orm_create()
+def test_state_is_not_submitted_for_non_us_country():
+    with mock.patch('requests.post') as post:
+        post.return_value = mock.MagicMock(status_code=200)
+        gateway.authenticate(
+            AMT, CURRENCY, delivery_state="Somerset", delivery_country='GB'
+        )
+        args, __ = post.call_args
+        assert args[1]['DeliveryState'] == ""
+
+
 @stub_sagepay_response()
 def test_audit_model_is_called_with_request_params():
     patch_kwargs = {
@@ -71,3 +94,29 @@ def test_audit_model_is_called_with_request_params():
     assert ref == 'x'
     for key in ('VPSProtocol', 'Vendor', 'TxType'):
         assert key in call_params
+
+
+@pytest.mark.parametrize("raw, clean", [
+    (u"Name?", u"Name"),
+    (u"Name!", u"Name"),
+    (u"&-.,1", u"&-.,1"),
+    (u"dèjá vu", u"dèjá vu"),
+])
+def test_clean_name_strips_invalid_chars(raw, clean):
+    assert gateway.clean_name(raw) == clean
+
+
+@pytest.mark.parametrize("raw, clean", [
+    (u"&-.,1+()", u"&-.,1+()"),
+    (u"dèjá vu", u"dèjá vu"),
+])
+def test_clean_address_strips_invalid_chars(raw, clean):
+    assert gateway.clean_address(raw) == clean
+
+
+@pytest.mark.parametrize("raw, clean", [
+    (u"N12 9ET", u"N12 9ET"),
+    (u"N12.9ET", u"N129ET"),
+])
+def test_clean_postcode_strips_invalid_chars(raw, clean):
+    assert gateway.clean_postcode(raw) == clean
