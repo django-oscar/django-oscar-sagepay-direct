@@ -24,11 +24,11 @@ def _get_bankcard_params(bankcard):
     if hasattr(bankcard, 'expiry_month'):
         bankcard_expiry = bankcard.expiry_month('%m%y')
     else:
-        bankcard_expiry = bankcard.expiry_date.replace('/', '')
+        bankcard_expiry = bankcard.expiry_date.strftime('%m%y')
 
     params = {
         'bankcard_number': bankcard_number,
-        'bankcard_cv2': bankcard.ccv,
+        'bankcard_cv2': getattr('bankcard', 'ccv', ''),
         'bankcard_name': card_holder_name,
         'bankcard_expiry': bankcard_expiry,
     }
