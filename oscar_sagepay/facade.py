@@ -24,7 +24,10 @@ def _get_bankcard_params(bankcard):
     if hasattr(bankcard, 'expiry_month'):
         bankcard_expiry = bankcard.expiry_month('%m%y')
     else:
-        bankcard_expiry = bankcard.expiry_date.strftime('%m%y')
+        if isinstance(bankcard.expiry_date, (str, unicode)):
+            bankcard_expiry = bankcard.expiry_date.replace('/', '')
+        else:
+            bankcard_expiry = bankcard.expiry_date.strftime('%m%y')
 
     params = {
         'bankcard_number': bankcard_number,
