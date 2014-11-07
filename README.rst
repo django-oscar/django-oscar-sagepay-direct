@@ -18,7 +18,7 @@ Install package using either:
 
 .. code-block:: bash
 
-   $ pip install django-oscar-sagepay-direct  # not ready just yet sorry 
+   $ pip install django-oscar-sagepay-direct
 
 or:
 
