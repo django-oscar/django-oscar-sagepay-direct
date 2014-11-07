@@ -32,6 +32,8 @@ Add ``oscar_sagepay`` to ``INSTALLED_APPS`` and specify your vendor name:
 
    OSCAR_SAGEPAY_VENDOR = 'tangentlabs'
 
+You will also need to install ``django-oscar`` too.
+
 Usage
 -----
 
