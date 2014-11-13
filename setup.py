@@ -19,7 +19,7 @@ setup(
     test_suite="tests",
     install_requires=[
         'requests>=1.0',
-        'django-osar>=0.4',
+        'django-oscar>=0.4',
     ],
     # See http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
