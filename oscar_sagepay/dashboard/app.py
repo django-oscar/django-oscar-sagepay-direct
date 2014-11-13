@@ -10,7 +10,7 @@ except ImportError:
     pass
 else:
     # Old way of registering Dashboard nodes
-    node = Node('Datacash', 'sagepay-transaction-list')
+    node = Node('Sagepay', 'sagepay-transaction-list')
     register(node, 100)
 
 
